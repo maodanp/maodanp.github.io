@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="golang中context包" />
+<meta property="og:description" content="在阅读一些标准库(net、net/http、os/exec)时，经常会遇到context包，大致知道是当做关闭事件触发用的。阅读完GoTeam的文章Go Concurrency Patterns: Context，才更深刻的了解了其设计意图。
+
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/09/04/go/" />
+
+
+
+<meta property="article:published_time" content="2016-09-04T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-09-04T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="golang中context包"/>
+<meta name="twitter:description" content="在阅读一些标准库(net、net/http、os/exec)时，经常会遇到context包，大致知道是当做关闭事件触发用的。阅读完GoTeam的文章Go Concurrency Patterns: Context，才更深刻的了解了其设计意图。
+
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/09/04/go/">
+
+    <title>
+      
+        golang中context包 | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/09/04/go/">golang中context包</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Sep 4, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/golang">golang</a>
+    
+        <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>在阅读一些标准库(net、net/http、os/exec)时，经常会遇到context包，大致知道是当做关闭事件触发用的。阅读完GoTeam的文章<a href="https://blog.golang.org/context">Go Concurrency Patterns: Context</a>，才更深刻的了解了其设计意图。</p>
+
+<p></p>
+
+<p>一般我们会通过<code>select + channel</code>的方式去终止一个协程，这也是最简单的情况。我们可以考虑些稍微复杂的情形，比如在写Go的Server服务，context包能够使得传递某些信息给相关的处理协程变得很简单，这些传递信息包括：<strong>请求域的值(request-scoped values)</strong>、<strong>中断信号(cancelation signals)</strong>、<strong>过期时间</strong>等。或者想中止某个goroutine创建的goroutines，使用context也很方便。</p>
+
+<p>目前Go1.7将原来的<code>golang.org/x/net/context</code>包挪入了标准库中，放在<code>$GOROOT/src/context</code>，可见context模式用途广泛。</p>
+
+<h3 id="context接口">Context接口</h3>
+
+<p><strong>context</strong>包的核心是一个<strong>Context</strong>类型：</p>
+
+<pre><code class="language-go">// Context包 携带信息包括过期时间、中止信号，参数值等
+// context 包里的方法是线程安全的，可以被多个 goroutine 使用
+type Context interface {
+
+    // 当Context被canceled或times out的时候，Done返回一个被close的channel 
+    Done() &lt;-chan struct{}
+
+    // 在Done的channel被closed后， Err代表被关闭的原因   
+    Err() error
+
+    // 如果存在，Deadline返回Context将要关闭的时间 
+    Deadline() (deadline time.Time, ok bool)
+
+    // 如果存在，Value返回与key相关了的值，不存在返回nil  
+    Value(key interface{}) interface{}
+}
+</code></pre>
+
+<p>其中的Done方法返回了一个通道，代表了Context的一个中止信号：当这个通道关闭，函数将中止并且立即返回。Err方法也将返回为何被终止的错误。</p>
+
+<p>Done方法返回的通道是只读的，所以Context并没有提供Cancel方法来关闭通道。这个也比较好理解，比如当一个协程创建了很多的子协程，这些子协程不能够中止父协程的。而父协程则可以通过WithCancel函数(后面描述)提供的一种方式来中止子协程。</p>
+
+<h3 id="派生的结构">派生的结构</h3>
+
+<p>context包为我们提供了两个Context包的实现，Background()与TODO()。只是返回的这两个实例都是空 Context。它们没有过期时间，没有任何值，一般在<code>main</code>,<code>init</code>,<code>tests</code>等函数中，当做对上层的Context使用，其他Context往往派生于它们(一般嵌入到其他Context中)。</p>
+
+<h4 id="cancelctx">cancelCtx</h4>
+
+<p>cancelCtx结构体继承了Context ，实现了canceler方法：</p>
+
+<pre><code class="language-go">//*cancelCtx 和 *timerCtx 都实现了canceler接口，实现该接口的类型都可以被直接canceled
+type canceler interface {
+    cancel(removeFromParent bool, err error)
+    Done() &lt;-chan struct{}
+}        
+
+type cancelCtx struct {
+    Context
+    done chan struct{} // closed by the first cancel call.
+    mu       sync.Mutex
+    children map[canceler]bool // set to nil by the first cancel call
+    err      error             
+}
+
+</code></pre>
+
+<p>其中，核心方法是<code>cancel</code>。该方法会依次遍历c.children，每个child分别cancel；如果设置了removeFromParent，则将c从其parent的children中删除</p>
+
+<pre><code class="language-go">func (c *cancelCtx) cancel(removeFromParent bool, err error) {
+      //...
+}
+</code></pre>
+
+<p>我们可以通过WithCancel函数来创建一个cancelCtx。返回一个 cancelCtx的结构，同时也会返回一个CancelFunc自定义函数，调用该函数，将会关闭对应的c.done，也就是让他的后代goroutine退出。</p>
+
+<pre><code class="language-go">func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
+    //...
+}
+</code></pre>
+
+<h4 id="timerctx">timerCtx</h4>
+
+<p>timerCtx 结构继承 cancelCtx。</p>
+
+<pre><code class="language-go">type timerCtx struct {
+    cancelCtx //此处的封装为了继承来自于cancelCtx的方法，cancelCtx.Context才是父亲节点的指针
+    timer *time.Timer // 计时器
+    deadline time.Time
+}
+</code></pre>
+
+<p>我们可以通过下面两个函数来创建timerCtx：</p>
+
+<pre><code class="language-go">func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
+</code></pre>
+
+<p>WithDeadline 和 WithTimeout 是相似的，WithDeadline 是设置具体的deadline时间，到达deadline的时候，派生goroutine退出；WithTimeout设置的是时间间隔。</p>
+
+<h4 id="valuectx">valueCtx</h4>
+
+<p>valueCtx 结构实现了Cancel接口。该结构多了一对key,val的值。其派生goroutine通过Context以及key都能得到响应的val。</p>
+
+<pre><code class="language-go">type valueCtx struct {
+    Context
+    key, val interface{}
+}
+</code></pre>
+
+<h3 id="示例">示例</h3>
+
+<p>下面模拟了一个累加器，通过context传递累加的上限。</p>
+
+<pre><code class="language-go">package main
+
+import (
+        &quot;context&quot;   //go1.7以上版本直接使用标准库中的context
+        &quot;fmt&quot;
+        &quot;time&quot;
+)
+
+// 模拟累加器
+func accumulator(ctx context.Context) (res int) {
+        loop, ok := ctx.Value(userKey).(int)
+        if !ok {
+                return 0
+        }
+
+        // 直到累加结束或者收到closed channel
+        for i := 0; i &lt; loop; i++ {
+                res += i
+                select {
+                case &lt;-ctx.Done():
+                        fmt.Println(&quot;need to done&quot;)
+                        return res
+                default:
+                }
+        }
+        fmt.Println(&quot;finish calculate&quot;)
+        return res
+}
+
+type key int
+
+const userKey key = 0
+
+func main() {
+        // cancelCtx
+        ctx, cancel := context.WithCancel(context.Background())
+        // valueCtx
+        newCtx := context.WithValue(ctx, userKey, 10000000)
+
+        go func() {
+                time.Sleep(1 * time.Millisecond)
+                cancel() // 在调用处主动取消
+        }()
+        res := accumulator(newCtx)
+        fmt.Printf(&quot;accumulato result: %d\n&quot;, res)
+}
+</code></pre>
+
+<h3 id="总结">总结</h3>
+
+<p>在请求的输入输出函数中，一般讲context作为首个参数传递。它能够非常简便的控制超时、中止等操作，并且也能够确保信息在goroutine中的安全传输。</p>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="https://blog.golang.org/context">Go Concurrency Patterns: Context</a></p>
+
+    
+
+    
+
+    <h4></h4>
+    <ul>
+        
+            <li><a href="/2016/04/30/golang-interface/">Golang — 面向对象语言(方法、接口、匿名组合)</a></li>
+        
+            <li><a href="/2016/04/28/golang-resolve/">golang中域名解析问题</a></li>
+        
+            <li><a href="/2015/04/15/error-handling-in-go-part-ii/">golang错误处理(二)</a></li>
+        
+            <li><a href="/2015/04/12/error-handling-in-go-part-i/">golang错误处理(一)</a></li>
+        
+            <li><a href="/2016/03/15/using-pointers-in-go/">golang参数传递</a></li>
+        
+    </ul>
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

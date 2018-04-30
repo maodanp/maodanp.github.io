@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="Golang — 面向对象语言(方法、接口、匿名组合)" />
+<meta property="og:description" content="初学Golang时，一直困惑其中的struct类型是否等同于面向对象中的object, interface是否等同于多态。下面来好好扒一扒Golang与面向对象的关系。
+
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/04/30/golang-interface/" />
+
+
+
+<meta property="article:published_time" content="2016-04-30T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-04-30T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Golang — 面向对象语言(方法、接口、匿名组合)"/>
+<meta name="twitter:description" content="初学Golang时，一直困惑其中的struct类型是否等同于面向对象中的object, interface是否等同于多态。下面来好好扒一扒Golang与面向对象的关系。
+
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/04/30/golang-interface/">
+
+    <title>
+      
+        Golang — 面向对象语言(方法、接口、匿名组合) | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/04/30/golang-interface/">Golang — 面向对象语言(方法、接口、匿名组合)</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Apr 30, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/golang">golang</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>初学Golang时，一直困惑其中的<code>struct类型</code>是否等同于面向对象中的object, <code>interface</code>是否等同于多态。下面来好好扒一扒Golang与面向对象的关系。</p>
+
+<p></p>
+
+<h3 id="go中的对象">Go中的对象</h3>
+
+<p>在面向对象的编程中，封装、继承、多态是主要的三大要素，表示对象本身的状态、行为；不同对象之间的相互关系等。Steve Francia对面向对象做了一个标准的定义：</p>
+
+<blockquote>
+<p>面向对象系统将数据和代码通过“对象”集成到一起，而不是将程序看成由分离的数据和代码组成。对象是数据类型的抽象，它有状态（数据）和行为（代码）</p>
+</blockquote>
+
+<p>那在Go语言中，并不像C++/Java那样通过class定义类对象及其方法，Go中实际并没有对象，但是Go中的结构体类型/struct有着跟object相同的特性。</p>
+
+<blockquote>
+<p>struct是一种包含了命名字段和方法的类型</p>
+</blockquote>
+
+<p>Go语言有意得被设计为没有继承语法。但这并不意味go中的对象（struct value)之间没有关系，只不过go的作者选择了另外一种机制来暗含这种特性。Go语言严格遵循着 <a href="https://en.wikipedia.org/wiki/Composition_over_inheritance">组合优于继承的原则</a></p>
+
+<p><strong>go通过在struct和interface上使用组合和多态来实现继承关系， 通过struct实现 has-a 关系； 通过interface实现 is-a 关系。</strong></p>
+
+<h3 id="方法">方法</h3>
+
+<p>Go 语言中同时有函数和方法。一个方法就是一个包含了<strong>接受者(类型对象)</strong>的函数，接受者可以是命名类型或者结构体类型的一个值或者是一个指针。也就是说我们可以给任意类型(包括内置类型，但不包括指针类型)添加相应的方法。</p>
+
+<p>下面简单给出示例说明：</p>
+
+<pre><code>import ”fmt“
+type User struct {
+    Name  string
+    Email string
+    age   int
+}
+
+//User(值) 的Notify()方法
+func (u User) Notify() error {
+    u.age += 1
+    return nil
+}
+
+//User(指针) 的NotifyPtr()方法
+func (u *User) NotifyPtr() error {
+    u.age += 1
+    return nil
+}
+
+func main() {
+
+    // User 类型的值可以调用接受者是值的方法
+    damon := User{&quot;AriesDevil&quot;, &quot;ariesdevil@xxoo.com&quot;, 20}
+    damon.Notify()
+    fmt.Printf(&quot;client.do info:%v\n&quot;, damon)
+    // User 类型的值可以调用接受者是指针的方法
+    damon.NotifyPtr()
+    fmt.Printf(&quot;client.do info:%v\n&quot;, damon)
+
+    // User 类型的指针同样可以调用接受者是值的方法
+    alimon := &amp;User{&quot;A-limon&quot;, &quot;alimon@ooxx.com&quot;, 20}
+    alimon.Notify()
+    fmt.Printf(&quot;client.do info:%v\n&quot;, alimon)
+    //User 类型的指针同样可以调用接受者是指针的方法
+    alimon.NotifyPtr()
+    fmt.Printf(&quot;client.do info:%v\n&quot;, alimon)
+}
+</code></pre>
+
+<ul>
+<li>当接受者命名为一个值时，原来的对象的成员都没有变（age=20）</li>
+<li>当接受者命名为一个指针时，原来的对象成员发生了变化（age=21）</li>
+</ul>
+
+<p><em>当接受者不是一个<code>指针</code>而是<code>值</code>时，该方法操作对应接受者的值的副本（即使使用了指针调用函数，但是函数的接受者是值类型，所以函数内部操作还是对副本的操作）。</em></p>
+
+<h3 id="接口">接口</h3>
+
+<p>Go语言中的接口很特别，而且提供了难以置信的一系列灵活性和抽象性。接口(interface)是一组抽象方法的集合，如果实现了interface中的所有方法，即该对象就实现了该接口。在Go语言中，只要两个接口有相同的方法列表，那么就可以互相赋值，而不需要知道继承于哪里。</p>
+
+<p>当一个接口只包含一个方法时，按照Go语言的约定命名该接口时添加 -er 后缀。这个约定很有用，特别是接口和方法具有相同名字和意义的时候(在 Go 语言标准库中，一个接口基本包含一种方法)。</p>
+
+<p>下面简单给出示例说明：</p>
+
+<pre><code>package main
+import &quot;fmt&quot;
+type User struct {
+    Name  string
+    Email string
+    age   int
+}
+
+//定义了一个 Notifier 接口并包含一个 Notify 方法
+type Notifier interface {
+    Notify() error
+}
+
+//定义函数接受任意一个实现了接口 Notifier 的类型的值或者指针
+func SendNotification(notify Notifier) error {
+    return notify.Notify()
+}
+
+func (u *User) Notify() error {
+    log.Printf(&quot;User: Sending User Email To %s&lt;%s&gt;\n&quot;,
+        u.Name,
+        u.Email)
+    return nil
+}
+
+func main() {
+    user := User{
+        Name:  &quot;AriesDevil&quot;,
+        Email: &quot;ariesdevil@xxoo.com&quot;,
+    }
+
+    SendNotification(user)
+}
+</code></pre>
+
+<p>运行结果如下：</p>
+
+<p><strong><code>cannot use user (type User) as type Notifier in argument to SendNotification:</code>
+    <code>User does not implement Notifier (Notify method has pointer receiver)</code></strong></p>
+
+<p>上面运行说：User类型没有实现Notifier接口，但是User指针类型接受者实现了Notifier接口。 如果将上述的接受者改为值类型，就正常运行了：</p>
+
+<pre><code>func (u User) Notify() error {
+    log.Printf(&quot;User: Sending User Email To %s&lt;%s&gt;\n&quot;,
+        u.Name,
+        u.Email)
+    return nil
+}
+</code></pre>
+
+<p>或者只需要传入 User 值的地址到 SendNotification 函数：</p>
+
+<pre><code>user := &amp;User{
+        Name:  &quot;AriesDevil&quot;,
+        Email: &quot;ariesdevil@xxoo.com&quot;,
+    }
+</code></pre>
+
+<p><strong>接口的调用规则不同于方法的调用， 接口的调用规则需要建立在这些方法的接受者和接口如何被调用的基础上。</strong> 下面是Go语言规范中定义的规则：</p>
+
+<ol>
+<li><p>类型 T 的可调用方法集不包含接受者为 *T 的方法</p>
+
+<p>即我们传入 SendNotification 函数的接口变量一个值类型的话，那 Notify() 方法的接受者必须是值类型的。</p></li>
+
+<li><p>类型 *T 的可调用方法集包含接受者为 *T 或 T 的所有方法集</p>
+
+<p>即我们传入 SendNotification 函数的接口变量一个指针类型的话，那 Notify() 方法的接受者可以是值类型也可以是指针类型。</p></li>
+</ol>
+
+<h3 id="匿名域-匿名组合">匿名域/匿名组合</h3>
+
+<p>结构体类型可以包含匿名或者嵌入字段(嵌入类型的名字充当了匿名组合的字段名)。</p>
+
+<pre><code>type Admin struct {
+  User
+  Level  string
+}
+</code></pre>
+
+<p>Effective Go中有关于嵌入类型的规则描述：</p>
+
+<blockquote>
+<p>当我们嵌入一个类型，这个类型的方法就变成了外部类型的方法；但是当它被调用时，方法的接受者是内部类型(嵌入类型)，而非外部类型。</p>
+</blockquote>
+
+<p>下面的例子中，Admin和匿名组合User同时实现了Notifier接口，那么编译器该确定使用哪个接口？如下<a href="https://play.golang.org/p/8V4yo97AxN">完整代码</a></p>
+
+<pre><code>func main() {
+
+    a := &amp;Admin{
+        User: User{
+            Name:  &quot;admin&quot;,
+            Email: &quot;ariesdevil@xxoo.com&quot;,
+        },
+        Level: &quot;master&quot;,
+    }
+
+    //Sending User Email To AriesDevil&lt;ariesdevil@xxoo.com&gt;
+    a.User.Notify()
+
+    //Sending Admin Email To AriesDevil&lt;ariesdevil@xxoo.com&gt;
+    a.Notify()
+}
+</code></pre>
+
+<p>从上述代码中可以看出，如果Admin类型的接口实现的输出，User 类型的接口实现不被提升到外部类型了。</p>
+
+<p>对于Go语言中外部类型方法集提升的规则：</p>
+
+<ol>
+<li><p>如果 S 包含一个匿名字段 T，S 和 *S 的方法集都包含接受者为 T 的方法提升</p></li>
+
+<li><p>对于 *S 类型的方法集包含接受者为 *T</p>
+
+<p>当外部类型使用指针调用内部类型的方法时，只有接受者为指针类型的内部类型方法集将被提升</p></li>
+
+<li><p>如果S包含一个匿名字段 *T，S 和 *S 的方法集都包含接受者为 T 或者 *T 的方法提升</p></li>
+
+<li><p>如果 S 包含一个匿名字段 T，S 的方法集不包含接受者为 *T 的方法提升</p></li>
+</ol>
+
+<h3 id="go中的多态实现">Go中的多态实现</h3>
+
+<p>真正意义上，如果匿名域能实现多态，则外层独享应该等同于嵌入的对象，而实际上并非如此，他们仍然是不同的存在：</p>
+
+<pre><code>package main
+
+type A struct{
+}
+
+type B struct {
+    A  //B is-a A
+}
+
+func save(A) {
+    //do something
+}
+
+func main() {
+    b := B
+    save(&amp;b);  //OOOPS! b IS NOT A
+}
+</code></pre>
+
+<p>多态是一种is-a的关系。在go语言中，每种类型(type)都是不同的，一种类型不能完全等同于另外一种类型，但它们可以绑定到同一个接口（interface）上。接口能用于函数（方法）的输入输出中，因而可以在类型之间建立起is-a的关系。 <a href="https://play.golang.org/p/Iw0g_OO0nj">完整代码</a></p>
+
+<pre><code>func SendNotification(notify Notifier) error {
+    return notify.Notify()
+}
+
+func main() {
+    u := &amp;User{
+            Name:  &quot;user&quot;,
+            Email: &quot;user@xxoo.com&quot;,
+        }
+
+    a := &amp;Admin{
+        User: User{
+            Name:  &quot;admin&quot;,
+            Email: &quot;admin@xxoo.com&quot;,
+        },
+        Level: &quot;master&quot;,
+    }
+
+    //Sending User Email To AriesDevil&lt;ariesdevil@xxoo.com&gt;
+    SendNotification(u)
+
+    //Sending Admin Email To AriesDevil&lt;ariesdevil@xxoo.com&gt;
+    SendNotification(a)
+}
+</code></pre>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="http://studygolang.com/articles/4390">Go是面向对象语言吗？</a></p>
+
+<p><a href="https://www.goinggo.net/2014/05/methods-interfaces-and-embedded-types.html">Methods, Interfaces and Embedded Types in Go</a></p>
+
+<p><a href="http://www.jb51.net/article/56812.htm">Go语言中的方法、接口和嵌入类型详解</a></p>
+
+    
+
+    
+
+    <h4></h4>
+    <ul>
+        
+            <li><a href="/2016/04/28/golang-resolve/">golang中域名解析问题</a></li>
+        
+            <li><a href="/2015/04/15/error-handling-in-go-part-ii/">golang错误处理(二)</a></li>
+        
+            <li><a href="/2015/04/12/error-handling-in-go-part-i/">golang错误处理(一)</a></li>
+        
+            <li><a href="/2016/03/15/using-pointers-in-go/">golang参数传递</a></li>
+        
+            <li><a href="/2016/03/01/understanding-slices-in-go-programming/">理解golang中的切片</a></li>
+        
+    </ul>
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="Linux防火墙" />
+<meta property="og:description" content="在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2015/07/07/linux-iptables/" />
+
+
+
+<meta property="article:published_time" content="2015-07-07T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2015-07-07T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Linux防火墙"/>
+<meta name="twitter:description" content="在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2015/07/07/linux-iptables/">
+
+    <title>
+      
+        Linux防火墙 | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2015/07/07/linux-iptables/">Linux防火墙</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Jul 7, 2015
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/linux">linux</a>
+    
+        <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。
+</p>
+
+<h3 id="snat-dnat-masquerade">SNAT、DNAT、MASQUERADE</h3>
+
+<p>了解Linux防火墙之前，需要对有些网络基础的概念有所了解。iptables能够灵活的做各种地址转换(NAT)，NAT主要又分为SNAT、DNAT。</p>
+
+<p>SNAT (source network address translation)，即源地址目标转换。内部地址要访问公网上的服务时（如web访问），内部地址会主动发起连接，由路由器或者防火墙上的网关对内部地址做个地址转换，将内部地址的私有IP转换为公网的公有IP，网关的这个地址转换称为SNAT，主要用于内部共享IP访问外部。</p>
+
+<p>DNAT (destination network address translation），即目标网络地址转换。当内部需要提供对外服务时（如对外发布web网站），外部地址发起主动连接，由路由器或者防火墙上的网关接收这个连接，然后将连接转换到内部，此过程是由带有公网IP的网关替代内部服务来接收外部的连接，然后在内部做地址转换，此转换称为DNAT，主要用于内部服务对外发布。</p>
+
+<p>MASQUERADE，地址伪装，在iptables中有着和SNAT相近的效果，但也有一些区别。使用SNAT的时候，出口ip的地址范围可以是一个，也可以是多个。MASQUERADE作用是，从服务器的网卡上，自动获取当前ip地址来做NAT，就不用手动指定转换的目的IP了，实现了动态的SNAT。</p>
+
+<h3 id="linux防火墙的应用">Linux防火墙的应用</h3>
+
+<p>Linux防火墙iptables的用途主要包括NAT路由、安全防护、透明代理等。</p>
+
+<ol>
+<li>企业或者网吧能够利用iptables作为企业的NAT路由器，代替传统的路由器供企业内部员工上网，节约成本并能有效控制</li>
+<li>提供外网到内网的IP映射，能够使得内部Web服务器对外提供服务，即DNAT</li>
+<li>iptables可以防止轻量级的DDOS攻击，如ping攻击以及SYN洪水攻击</li>
+<li>iptables可以结合squid作为内部上网的透明代理，不需要再浏览器里配置代理服务器信息，iptables+squid的透明代理可以将客户端的请求重定向到代理服务器的端口。</li>
+</ol>
+
+<h3 id="netfilter-与-iptables">Netfilter 与 iptables</h3>
+
+<p>Netfiter/iptables是IP信息包过滤系统的一个整体的两个模块。 Netfiter是内核的模块实现， iptables是上层的操作工具。</p>
+
+<p>Netfiter是Linux核心中的一个通用结构，它要么被直接编译进内核，要么被包含在模块中，运行在内核空间。</p>
+
+<p>iptables提供一些列的表，每个表由若干条链组成，每条链中可以由一条或薯条规则组成。 iptables是一个管理内核包过滤的工具，可以加入、插入或者删除核心包过滤表中的规则。它运行在用户控件，真正执行这些过滤规则的是Netfilter。</p>
+
+<h3 id="网络数据的流向">网络数据的流向</h3>
+
+<p>我们知道TCP/IP四层网络模型自下而上包括：链路层、网络层、传输层、应用层。在数据的发送过程中，从上至下依次是<strong>加头</strong>的过程，每到达一层数据就被会加上该层的头部；与此同时，接受数据方就是个<strong>剥头</strong>的过程，从网卡收上包来之后，在往协议栈的上层传递过程中依次剥去每层的头部，最终到达用户那儿的就是裸数据了。</p>
+
+<p>数据在网络协议栈中的基本流程如下：</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-07-07-linux-iptables-1.png" alt="" /></p>
+
+<p>对于收到的每个数据包，都从“A”点进来，经过路由判决，如果是发送给本机的就经过“B”点，然后往协议栈的上层继续传递；否则，如果该数据包的目的地是不本机，那么就经过“C”点，然后顺着“E”点将该包转发出去。</p>
+
+<p>对于发送的每个数据包，首先也有一个路由判决，以确定该包是从哪个接口出去，然后经过“D”点，最后也是顺着“E”点将该包发送出去。</p>
+
+<p>Netfilter是Linux 2.4.x引入的一个子系统，它作为一个通用的、抽象的框架，提供一整套的hook函数的管理机制，使得诸如数据包过滤、网络地址转换(NAT)和基于协议类型的连接跟踪成为了可能。Netfilter在内核中位置如下图所示：</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-07-07-linux-iptables-2.png" alt="" /></p>
+
+<p>上图很直观的反应了用户空间的iptables和内核空间的基于Netfilter的iptables模块之间的关系和其通讯方式，以及Netfilter在这其中所扮演的角色。</p>
+
+<p>Netfilter在netfilter_ipv4.h中将这个五个点重新命了个名，如下图所示:</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-07-07-linux-iptables-3.png" alt="" /></p>
+
+<p>即对于数据包而言的几个流向分别为：</p>
+
+<ol>
+<li>PREROUTING &ndash;&gt; FORWARD &ndash;&gt; POSTROUTING</li>
+<li>PREROUTING &ndash;&gt; INPUT &ndash;&gt; OUTPUT &ndash;&gt; POSTROUTING</li>
+</ol>
+
+<p>上述两种主要流向就是iptables的两种工作模式：NAT路由、主机防火墙。</p>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="http://blog.csdn.net/sdytlm/article/details/6544913/">iptables介绍</a></p>
+
+<p><a href="http://blog.chinaunix.net/uid-23069658-id-3160506.html">洞悉linux下的Netfilter&amp;iptables：什么是Netfilter？ </a></p>
+
+<p><a href="http://my.oschina.net/hevakelcj/blog/313212">Linux下防火墙iptables设置</a></p>
+
+<p><a href="http://blog.chinaunix.net/uid-21516619-id-1824942.html">IPtables中SNAT、DNAT和MASQUERADE的区别</a></p>
+
+<p><a href="http://www.cnblogs.com/JemBai/archive/2009/03/19/1416364.html">linux下IPTABLES配置详解</a></p>
+
+<p>《构建高可用Linux服务器》 Ch8 Linx防火墙及系统安全</p>
+
+    
+
+    
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

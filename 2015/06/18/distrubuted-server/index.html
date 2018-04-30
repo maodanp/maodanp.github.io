@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="简单分布式服务器框架" />
+<meta property="og:description" content="最近工作中接触到分布式服务器，现针对学到的作简要概述, 分布式服务器之路刚起步。
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2015/06/18/distrubuted-server/" />
+
+
+
+<meta property="article:published_time" content="2015-06-18T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2015-06-18T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="简单分布式服务器框架"/>
+<meta name="twitter:description" content="最近工作中接触到分布式服务器，现针对学到的作简要概述, 分布式服务器之路刚起步。
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2015/06/18/distrubuted-server/">
+
+    <title>
+      
+        简单分布式服务器框架 | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2015/06/18/distrubuted-server/">简单分布式服务器框架</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Jun 18, 2015
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>最近工作中接触到分布式服务器，现针对学到的作简要概述, 分布式服务器之路刚起步。
+</p>
+
+<h3 id="整体框架">整体框架</h3>
+
+<p>下面结合Hadoop的框架思想与工作中接触到的分布式框架，给出简易分布式服务器框架的设计。整体设计框架如下图所示：
+<img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-06-18-distrubuted-server-1.png" alt="" /></p>
+
+<p>如上图示，可以将整体模块分为5个结构层次，分别为： 客户端层、JobTracker层、TaskTracker层、DBC/CloudC层、以及最后的 DB/Cloud层。</p>
+
+<ul>
+<li>客户端层</li>
+</ul>
+
+<p>该层即为客户端的web访问层，通过http访问JobTracker层。 web与JobTracker的具体协议可以协定，或者RPC/HTTP协议都可以。
+客户端的主要完成工作请求、暂停、删除作业；获得作业的运行状态信息等。</p>
+
+<ul>
+<li>JobTracker层</li>
+</ul>
+
+<p>该层是整个分布式服务器的核心层。它是整个集群中唯一的全局“管理者”，涉及的功能包括作业管理、状态监控、任务调度等。 总体而言，JobTracker主要包括两个功能：作业的调度与TaskTracker资源的管理。下节将具体讲解简易集群JobTracker的实现原理。</p>
+
+<ul>
+<li>TaskTracker层</li>
+</ul>
+
+<p>TaskTracker主要负责任务的执行和任务状态的上报，还有就是分析后结果的入库等等。</p>
+
+<ul>
+<li>DBC/CloudC层</li>
+</ul>
+
+<p>DBC为数据库控制模块，CloudC为云存储控制模块。这里通过这两个模块与下面的数据库、云存储交互。控制模块中可以通过缓存机制，连接池机制等减轻直接访问DB/Cloud的压力。</p>
+
+<ul>
+<li>DB/Cloud层</li>
+</ul>
+
+<p>DB/Cloud分别为数据库、云存储（可以部署在一台服务器或不同的服务器上） 。为啥要分数据库和云存储呢？ 对于结构化的信息，存储在数据库中比较方便，能够插入、更新、修改（这里的数据库设计的是关系型数据库，而非HBase那种面向列的存储数据库）。云存储则存储的是大的文件信息，这样TaskTracker通过调用CloudC的API，获得资源所在云存储的URL，TaskTracker能够根据URL直接访问云存储。</p>
+
+<h3 id="jobtracker实现细节">JobTracker实现细节</h3>
+
+<p>JobTracker是整个系统的核心租价，是系统高效运转的关键。其实现框架如下图：
+<img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-06-18-distrubuted-server-2.png" alt="" /></p>
+
+<p>这里，将JobTracker的内部框架分为四个模块，分别是 TaskScheduler（任务调度模块），TaskSelect（任务选择模块），ResourceSelect（资源选择模块，选择哪个TaskTracker执行任务）。私有DB模块（存放任务的数据库）。</p>
+
+<ul>
+<li>TaskScheduler模块
+该模块负责Job与Task之间的关系维护，负责Job与task的进度管理及更新等工作。这里可以仿照hadoop采用“二层多叉树”方式描述和跟踪每个作业的运行状态（Hadoop采用的“三层多叉树”，多了一层任务运行尝试）。
+<img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-06-18-distrubuted-server-3.png" alt="" /></li>
+</ul>
+
+<p>其中，JobTracker为每个作业创建一个JobInProcess对象以跟踪和监控其运行状态。该对象存在于作业的整个运行过程中。同时，采用分而治之的策略，JobInProcess将每个作业拆分成若干个任务，并为每个任务创建一个TaskInProcess对象以跟踪和监控其运行状态。</p>
+
+<p>该模块还负责task与resource对应关系的管理。即哪个task放到了哪个tasktracker节点执行的。这就涉及到了与TaskSelect、ResourceSelect模块的交互。</p>
+
+<p>从图中可以看到，有私有数据库，这里的目的是将作业的信息、作业运行的当前状态等信息入库，JobTracker单点故障，重启后能够从数据库中读取保存的信息，重新运行任务。Hadoop中采用的日志方式进行任务的恢复，关于adoop的日志恢复，有待研究。这里姑且用任务数据库仿照Hadoop的日志恢复。</p>
+
+<ul>
+<li>TaskSelect模块</li>
+</ul>
+
+<p>该模块负责任务切片的选择。 因为客户端的 job是带有优先级的，有些job需要先执行，有些可以延后。 所以这里job切分的task切片都需要存放到TaskSelect模块的队列中，然后该模块选择优先级较高的task返回给TaskScheduler，表示当前可以执行该任务了。</p>
+
+<p>该模块中的优先级可以通过client端用户设定，而且优先级会根据时间长短动态调整。</p>
+
+<ul>
+<li>ResourceSelect模块</li>
+</ul>
+
+<p>该模块负责资源的选择。TaskTracker会定时发送心跳包给JobTracker，而发送的心跳包中包括资源使用情况（该节点的cpu利用率，内存利用率等信息你）以及任务运行状态。这些信息都将被保存在ResourceSelect这个模块。</p>
+
+<p>为每个TaskTracker节点创建一个对象（TaskTrackerObj），然后通过心跳来更新TaskTrackerObj中的状态信息。</p>
+
+<h3 id="tasktracker实现细节">TaskTracker实现细节</h3>
+
+<p>TaskTracker是任务的执行者，主要负责任务的执行和任务状态的上报。该模块的框架图如下所示：
+<img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-06-18-distrubuted-server-4.png" alt="" /></p>
+
+<p>该模块中也有个管理模块TaskManager。该模块的作用相当于任务执行者的管理者。它有权限控制下面的Task（可以拉起、暂停、杀死下面任意一个Task）。它还会收集自身的资源，各个任务的状态等信息上报给JobTracker。 也就是说它是与JobTracker直接交互的。</p>
+
+<p>这里，Task运行后的结果统一经过DBC保存到了DB中， 而Task需要的资源可以通过CloudC，获得资源的URL，然后直接下载到本地或者内存 。</p>
+
+<h3 id="存在问题">存在问题</h3>
+
+<p>与真正的Hadoop设计思想相比较，会发现笔者这里的简易集群确实简单，只是涉及了MapReduce的 master/slave架构，而对另外两个hadoop的精髓——HDFS、HBase则未涉及。只是实现简单的分布式计算，未实现分布式的存储。</p>
+
+<p>该设计也存在单点故障问题， 比如JobTracker的， DBC的，CloudC的单点故障等等。</p>
+
+    
+
+    
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

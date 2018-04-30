@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="分布式存储之Raft协议应用详解" />
+<meta property="og:description" content="最近研究Raft协议，也阅读了go-raft的实现代码，虽然已经不维护了，但etcd, InfluxDB等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对论文与实现过程作简要的分析, 并分析了Raft的容错处理。
+
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/08/13/bigdata-raft-state/" />
+
+
+
+<meta property="article:published_time" content="2016-08-13T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-08-13T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="分布式存储之Raft协议应用详解"/>
+<meta name="twitter:description" content="最近研究Raft协议，也阅读了go-raft的实现代码，虽然已经不维护了，但etcd, InfluxDB等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对论文与实现过程作简要的分析, 并分析了Raft的容错处理。
+
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/08/13/bigdata-raft-state/">
+
+    <title>
+      
+        分布式存储之Raft协议应用详解 | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/08/13/bigdata-raft-state/">分布式存储之Raft协议应用详解</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Aug 13, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>最近研究Raft协议，也阅读了<a href="https://github.com/goraft/raft">go-raft</a>的实现代码，虽然已经不维护了，但<strong>etcd</strong>, <strong>InfluxDB</strong>等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对<a href="http://files.catwell.info/misc/mirror/raft/raft.pdf">论文</a>与实现过程作简要的分析, 并分析了Raft的容错处理。</p>
+
+<p></p>
+
+<h3 id="raft节点状态数据">Raft节点状态数据</h3>
+
+<p>下图为每个Raft节点保存的一些状态信息：</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-1.png" alt="" /></p>
+
+<p>大致解释为：</p>
+
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th><strong>所有节点</strong>保存的持久化数据</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>currentTerm</strong></td>
+<td>最新任期数，第一次启动时为0，单调递增的</td>
+</tr>
+
+<tr>
+<td><strong>voteFor</strong></td>
+<td>当前任期内，本节点投票目标节点</td>
+</tr>
+
+<tr>
+<td><strong>log[]</strong></td>
+<td>日志项：每一项包含状态机命令，以及从<strong>Leader</strong>接收到的该日志项的任期</td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th><strong>所有节点</strong>非持久化数据</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>commitIndex</strong></td>
+<td>已经提交的最高日志项的编号（默认从0开始，单调递增）</td>
+</tr>
+
+<tr>
+<td><strong>lastApplied</strong></td>
+<td>log中最高的日志项的编号（默认从0开始，单调递增）</td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th><strong>Leader节点</strong>的可变状态(选举后会重置)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>nextIndex[]</strong></td>
+<td>对于每一个服务器，需要发送给他的下一个日志项的索引值（初始化为领导人最后索引值加一）</td>
+</tr>
+
+<tr>
+<td><strong>matchIndex[]</strong></td>
+<td>对于每一个服务器，已经复制给它的日志的最高索引值</td>
+</tr>
+</tbody>
+</table>
+
+<p>在定义节点的状态信息时，在<strong>goraft</strong>的状态信息与论文中的有些差异，<strong>goraft</strong>中状态信息总结如下：</p>
+
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th><strong>所有节点</strong>保存的持久化数据</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>commitIndex</strong></td>
+<td>最新任期数，第一次启动时为0，单调递增的</td>
+</tr>
+
+<tr>
+<td><strong>Peer[]</strong></td>
+<td>集群中其他节点信息</td>
+</tr>
+
+<tr>
+<td><strong>log[]</strong></td>
+<td>日志项(同上)</td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th><strong>所有节点</strong>非持久化数据</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>currentTerm</strong></td>
+<td>最新任期数，第一次启动时为0，单调递增的</td>
+</tr>
+
+<tr>
+<td><strong>voteFor</strong></td>
+<td>当前任期内，本节点投票目标节点</td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th><strong>Leader节点</strong>的可变状态(选举后会重置)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>prevLogIndex</strong></td>
+<td><strong>Leader节点</strong>会维护一个<strong>Peer[]</strong>，存储集群中其他节点信息。其中每个节点信息中<strong>prevLogIndex</strong>表示上一次<strong>leader</strong>复制给它的最高索引编号</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>goraft</strong>中并没有将<strong>currentTerm</strong>作为持久化数据保存，因为已经保存了<strong>log[]</strong>, 而每个<strong>log entry</strong>中都包含term信息，每次server重启是，都会获取最后一个<strong>log entry</strong>中的term作为当前term，所以<strong>currentTerm</strong>不需要存储。</p>
+
+<h3 id="raft的rpc">Raft的RPC</h3>
+
+<p><strong>Raft</strong>的核心部分使用两个RPC进行节点间通信： <strong>RequestVote</strong>和<strong>AppendEntries</strong>:</p>
+
+<ul>
+<li><strong>RequestVote</strong> RPC: 由candidate发送给其他节点，请求其他节点为自己投票，如果一个candidate获得了多数节点的投票，则该candidate转变为Leader</li>
+<li><strong>AppendEntries</strong> RPC: 由Leader节点发送给其他节点，有两个作用，当其entries域为空时，该RPC作为Leader的心跳，当entries域不为空时，请求其他节点将其中的log添加到自己的log中</li>
+</ul>
+
+<h4 id="appendentries-rpc">AppendEntries RPC</h4>
+
+<p>以下为<strong>AppendEntries RPC</strong>的格式和说明:</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-2.png" alt="" /></p>
+
+<p>从以上<strong>AEs(AppendEntries RPC)</strong>的请求、响应格式说明可以看到，Raft对于实现细节有非常清晰的界定与描述。对于RPC接受者的实现主要有以下几种情况：</p>
+
+<ul>
+<li>如果 term &lt; currentTerm 就返回 false</li>
+<li>如果日志在 prevLogIndex 位置处的日志项的任期号和 prevLogTerm 不匹配，则返回 false</li>
+<li>如果已经已经存在的日志项和新的产生冲突（相同Index但是term不同），删除这一条和之后所有的</li>
+<li>附加任何在已有的日志中不存在的项</li>
+<li>如果 leaderCommit &gt; commitIndex，令 commitIndex 等于 leaderCommit 和 最新日志项索引值中较小的一个</li>
+</ul>
+
+<p><strong>goraft</strong>中的<strong>AEs RPC</strong>处理过程基本遵循上述处理流程，对应中的主要代码段如下：</p>
+
+<pre><code class="language-go"> func (s *server) processAppendEntriesRequest(req *AppendEntriesRequest){
+
+      //如果AppendEntries请求的term小于该server当前term
+      //返回失败
+      if req.Term &lt; s.currentTerm {
+          s.debugln(&quot;server.ae.error: stale term&quot;)
+          return false
+      }
+
+      if req.Term == s.currentTerm {
+
+          // 当server处于candidate状态，则降为follower
+          if s.state == Candidate {
+              s.setState(Follower)
+          }
+
+      } else {
+     
+          // term 比 目前的大，则有新的leader产生
+          // 更新 term 以及 leader
+          s.updateCurrentTerm(req.Term, req.LeaderName)
+      }
+
+      // 将req.PrevLogIndex 编号后的log entry都删除了
+      if err := s.log.truncate(req.PrevLogIndex, req.PrevLogTerm); err != nil {
+          return false
+      }
+
+     // 加入该server节点的 log entries
+      if err := s.log.appendEntries(req.Entries); err != nil {
+          return false
+      }
+
+      // 提交至req.CommitIndex
+      if err := s.log.setCommitIndex(req.CommitIndex); err != nil {
+          s.debugln(&quot;server.ae.commit.error: &quot;, err)
+          return true
+      }
+      return true;
+  }
+</code></pre>
+
+<p><strong>Leader</strong>对于 <strong>AppendEntries RPC Response</strong>的处理流程:</p>
+
+<ul>
+<li>如果在response中，有term大于当前leader的term，则当前leader角色转变为follower</li>
+<li>如果收到大多数节点的<strong>AEs</strong>成功回应，后续会判断下次的提交编号，否则返回</li>
+<li>Leader根据大多数节点返回的上次log的索引编号，来决定这次提交的编号， 该提交编号将在下次随<strong>AEs RPC</strong>传给follower</li>
+</ul>
+
+<pre><code class="language-go">func (s *server) processAppendEntriesResponse(resp *AppendEntriesResponse) {
+ 
+      // 如果发现AppendEntries的返回中term较大，则角色变为follower
+      // 这个判断非常重要，能够保证网络分区恢复后的一致性
+      if resp.Term() &gt; s.Term() {
+          s.updateCurrentTerm(resp.Term(), &quot;&quot;)
+          return
+      }
+
+      // 对于回应返回成功的，更新map表
+      if resp.append == true {
+          s.syncedPeer[resp.peer] = true
+      }
+
+      if len(s.syncedPeer) &lt; s.QuorumSize() {
+          return
+      }
+
+      // 计算此次需要提交的编号
+      var indices []uint64
+      indices = append(indices, s.log.currentIndex())
+      for _, peer := range s.peers {
+          indices = append(indices, peer.getPrevLogIndex())
+      }
+      sort.Sort(sort.Reverse(uint64Slice(indices)))
+
+      commitIndex := indices[s.QuorumSize()-1]
+      committedIndex := s.log.commitIndex
+
+      if commitIndex &gt; committedIndex {
+          s.log.sync()
+          s.log.setCommitIndex(commitIndex)
+      }
+  }
+</code></pre>
+
+<h4 id="requestvote-rpc">RequestVote RPC</h4>
+
+<p>以下为<strong>RequestVote RPC</strong>的格式和说明:</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-3.png" alt="" /></p>
+
+<p>对于<strong>RequestVote RPC</strong>接受者的处理流程：</p>
+
+<ul>
+<li>如果term &lt; currentTerm返回 false</li>
+<li>如果votedFor为空或者就是candidateId，并且候选人的日志也自己一样新，那么就投票给它</li>
+</ul>
+
+<p><strong>goraft</strong>中的<strong>RequestVote RPC</strong>处理过程主要代码段如下：</p>
+
+<pre><code class="language-go">
+func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
+
+      // term小于当前的，则返回false
+      if req.Term &lt; s.Term() {
+          s.debugln(&quot;server.rv.deny.vote: cause stale term&quot;)
+		  return false
+      }
+
+      // 如果请求的term大于该节点的term，则更新该节点的term
+      // 如果term相等，且我们已经投给了其他候选节点(votedFor参数),则不投给该候选节点candidate
+      // 即一个任期内只投给一个候选节点，但是可以投多次（可能存在网络异常，候选节点再次发出投票请求）
+      if req.Term &gt; s.Term() {
+          s.updateCurrentTerm(req.Term, &quot;&quot;)
+      } else if s.votedFor != &quot;&quot; &amp;&amp; s.votedFor != req.CandidateName {
+          return false
+      }
+
+      // 如果candidate中最新日志项编号小于 当前server的最新日志项编号，则不投票
+      // 这里满足了Raft的安全性：必须要比大部分其它候选者的log新，才有机会成为leader
+      lastIndex, lastTerm := s.log.lastInfo()
+      if lastIndex &gt; req.LastLogIndex || lastTerm &gt; req.LastLogTerm {
+          return false
+      }
+
+      s.votedFor = req.CandidateName
+
+      return true
+  }
+
+</code></pre>
+
+<p><strong>Candidate</strong>对于<strong>RequestVote RPC Response</strong>的处理流程:</p>
+
+<pre><code class="language-go">
+ func (s *server) candidateLoop() {
+	  //处于 Candidate 状态，直到状态改变为leader或者follower
+	  //否则超时后再次发起投票请求     
+      for s.State() == Candidate {
+
+          if doVote {
+              //自增term
+              s.currentTerm++
+              s.votedFor = s.name
+
+              // 向每个servers发送 RequestVote RPCs
+              respChan = make(chan *RequestVoteResponse, len(s.peers))
+              for _, peer := range s.peers {
+                  s.routineGroup.Add(1)
+                  go func(peer *Peer) {
+                      defer s.routineGroup.Done()
+                      peer.sendVoteRequest(newRequestVoteRequest(s.currentTerm, s.name, lastLogIndex, lastLogTerm), respChan)
+                  }(peer)
+              }
+
+              //发起请求后的变量初始化
+              votesGranted = 1
+              timeoutChan = afterBetween(s.ElectionTimeout(), s.ElectionTimeout()*2)
+              doVote = false
+           }
+
+           //如果收到超过半数以上的投票支持，则状态变为leader
+           if votesGranted == s.QuorumSize() {
+              s.setState(Leader)
+              return
+           }
+
+          select {
+          //处理收到RequestVote RPC回应
+          case resp := &lt;-respChan:
+              if success := s.processVoteResponse(resp); success {
+                  s.debugln(&quot;server.candidate.vote.granted: &quot;, votesGranted)
+                  votesGranted++
+              }
+          //如果选举超时，则继续选举    	
+          case &lt;-timeoutChan:
+              doVote = true
+       }
+</code></pre>
+
+<h3 id="raft的failure处理">Raft的failure处理</h3>
+
+<p>Raft关于容错的处理是需要考虑的方面。主要的异常包括<strong>Leader crash</strong>、<strong>Follower crash</strong>、<strong>Network Partition</strong>等。</p>
+
+<ul>
+<li><strong>Leader crash</strong></li>
+</ul>
+
+<p><strong>Leader crash</strong>需要考虑<strong>crash</strong>后，log中未被提交的数据是否属于<strong>脏数据</strong>。 这个需要分多种情况考虑。(a) 客户端将某条<strong>log entry</strong>发送给<strong>Leader</strong>后<strong>crash</strong>；(b) <strong>Leader</strong>将<strong>log entry</strong>发送给<strong>Follower</strong>后<strong>crash</strong>，(3)<strong>Leader</strong>提交了该<strong>entry</strong>后<strong>crash</strong>等等。</p>
+
+<p>对于情况(1)而言，该命令是未添加成功的(该命令在原leader中当做<strong>脏数据</strong>，将等待新<strong>Leader</strong>的覆盖)，客户端将超时后采取重试机制重新发送该命令，将会被新选举出的<strong>Leader</strong>处理。</p>
+
+<p>对于情况(2)而言，该命令算添加成功么？这个有需要分情况了：</p>
+
+<p>（a）如果大多数节点多收到了，添加到了各自的<strong>log entries</strong>中，那么此次添加算成功的。根据Raft的安全性原则，新选举出来的leader一定是包最新log的，并且新选出来的<strong>leader</strong>，term号一定大于上一轮的term。那么当新的日志提交以后，之前的commit就被间接地提交了；</p>
+
+<p>(b) 如果只有少部分<strong>Follower</strong>添加到了各自的<strong>log entries</strong>中，那就存在该日志被覆盖的情况，要看新选出的<strong>Leader</strong>是否包含这条日志了。</p>
+
+<p>下图为情况(2)中(a)的情形，即大多数节点都<strong>AppendEntries</strong>了，根据Raft安全性原则，后续的<strong>Leader</strong>在*F_1*或者<em>F_2</em> 中产生，那么 “Hello”命令也间接被提交了。</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-4.png" alt="" /></p>
+
+<p>对于情况(3)，类似于情况(2)中的(a)。</p>
+
+<ul>
+<li><strong>Follower crash</strong></li>
+</ul>
+
+<p><strong>Follower crash</strong>比较简单，主要是<strong>crash</strong>恢复后怎么保持log与<strong>Leader</strong>的一致性。具体如图示，*F_4*恢复后，怎么保持数据一致？</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-5.png" alt="" /></p>
+
+<p>在之前<strong>节点状态数据</strong>中我们看到，每个<strong>节点</strong>中会维护一个<strong>Peer[]</strong>, 存放集群中的节点信息。其中就有一个<strong>prevLogIndex</strong>，用于维护上一次该<strong>Follower</strong>最新添加的log的索引号。如果 <em>F_4</em> 恢复了，<strong>Leader</strong>中维护的<strong>prevLogIndex=1</strong>，后续将从索引2开始的所有<strong>log entries</strong>发送给 <em>F_4</em> 。</p>
+
+<ul>
+<li><strong>Network Partition</strong></li>
+</ul>
+
+<p><strong>Network Partition</strong>网络分区会导致<strong>脑裂问题</strong>，即每个分区都会出现一个<strong>Leader</strong>。这种情况随着分区的恢复，Raft很快能够恢复集群的一致性。</p>
+
+<p>下图为网络分区的一种情形，其中<em>le_1</em> 为原来的<strong>Leader</strong>， *le_2*为分区二新选举出的<strong>Leader</strong>（<strong>term</strong>比分区一的大)。</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-6.png" alt="" /></p>
+
+<p>对于图中的<strong>分区一</strong>，由于通信的节点不满足大多数节点（这里假设没有机制去变化整个集群总共的节点数量），所以向该分区中添加的日志都不能提交，客户端将一直收到超时的回复。而对于<strong>分区二</strong>，满足提交的条件，该分区中的日志都能够被正常提交。</p>
+
+<p>待分区恢复，*le_1*由于term小于*le_2*，则自动转为Follower状态，如下图所示，最终能够实现一致性。</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-7.png" alt="" /></p>
+
+<p>下图为网络分区的另一种情形，<em>le_1</em> 分区占有了大部分节点，能够正常的提交日志。但是<strong>分区二</strong>中的两个<strong>Follower</strong>节点，由于选票个数未过半，将持续处于<strong>Candidate</strong>状态，直到网络恢复。</p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-8.png" alt="" /></p>
+
+<p>由于<strong>分区二</strong>的竞选，导致term不停增加，网络分区恢复后，集群中的term号会随着<strong>leader</strong>的<strong>AppendEntries RPC</strong>（参见<strong>processAppendEntriesResponse</strong>函数），将term一起同步到最新。</p>
+
+<p>虽然Raft易于理解，但是工程实践还是需要考虑到各种异常情况。通过代码的阅读，也能够更加理解其背后的原理。</p>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="http://files.catwell.info/misc/mirror/raft/raft.pdf">In Search of an Understandable Consensus Algorithm</a></p>
+
+<p><a href="https://github.com/goraft/raft">https://github.com/goraft/raft</a></p>
+
+<p><a href="http://www.tuicool.com/articles/aERnm2U">从raft看failure的处理</a></p>
+
+    
+
+    
+
+    <h4></h4>
+    <ul>
+        
+            <li><a href="/2016/08/05/bigdata-raft/">分布式存储之Raft协议</a></li>
+        
+            <li><a href="/2016/07/17/bigdata-2pc/">分布式存储之2PC协议</a></li>
+        
+            <li><a href="/2016/07/02/bigdata-cap/">分布式存储之CAP原则</a></li>
+        
+            <li><a href="/2016/06/25/bigdata-data-slice/">分布式存储之数据切片</a></li>
+        
+            <li><a href="/2015/06/18/distrubuted-server/">简单分布式服务器框架</a></li>
+        
+    </ul>
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

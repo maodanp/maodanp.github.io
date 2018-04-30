@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="liunx性能检测常用命令(二)" />
+<meta property="og:description" content="前一篇讲述了Linux分析常用的一些命令，本篇继续分析其他常用命令。
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/09/04/linux-performace-cmd-two/" />
+
+
+
+<meta property="article:published_time" content="2016-09-04T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-09-04T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="liunx性能检测常用命令(二)"/>
+<meta name="twitter:description" content="前一篇讲述了Linux分析常用的一些命令，本篇继续分析其他常用命令。
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/09/04/linux-performace-cmd-two/">
+
+    <title>
+      
+        liunx性能检测常用命令(二) | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Sep 4, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/linux">Linux</a>
+    
+        <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p><a href="/2016/09/03/linux-performace-cmd-one">前一篇</a>讲述了Linux分析常用的一些命令，本篇继续分析其他常用命令。
+</p>
+
+<h3 id="iostat">iostat</h3>
+
+<p>iostat主要用于监控系统设备的IO负载情况。 主要用法如下:</p>
+
+<pre><code>iostat -xz 1
+
+Device:         rrqm/s   wrqm/s     r/s     w/s   rsec/s   wsec/s avgrq-sz avgqu-sz   await  svctm  %util
+sda               0.00    51.00    0.00   22.00     0.00   648.00    29.45     0.00    0.05   0.05   0.10
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.88    0.00    0.38    0.04    0.00   98.70
+
+Device:         rrqm/s   wrqm/s     r/s     w/s   rsec/s   wsec/s avgrq-sz avgqu-sz   await  svctm  %util
+sda               0.00    20.00    0.00   16.00     0.00   288.00    18.00     0.01    0.75   0.06   0.10
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           3.69    0.00    0.88    0.00    0.00   95.43
+</code></pre>
+
+<p>其中，<code>-x</code>将用于显示和io相关的扩展数据; <code>-z</code>将取消显示在该间隔统计数据中无io活动的设备。</p>
+
+<ul>
+<li><code>r/s, w/s, rkB/s, wkB/s</code> 分别表示每秒读写次数和每秒读写数据量（千字节）。读写量过大，可能会引起性能问题。</li>
+<li><code>await</code> IO操作的平均等待时间，单位是毫秒。这是应用程序在和磁盘交互时，需要消耗的时间，包括IO等待和实际操作的耗时。如果这个数值过大，可能是硬件设备遇到了瓶颈或者出现故障。</li>
+<li><code>avgqu-sz</code> 向设备发出的请求平均数量。如果这个数值大于1，可能是硬件设备已经饱和（部分前端硬件设备支持并行写入）。</li>
+<li><code>%util</code> 设备利用率。这个数值表示设备的繁忙程度，经验值是如果超过60，可能会影响IO性能（可以参照IO操作平均等待时间）。如果到达100%，说明硬件设备已经饱和。</li>
+</ul>
+
+<h3 id="free">free</h3>
+
+<pre><code>free -m
+
+              total       used       free      shared     buffers   cached
+Mem:           1002        769        232        0           62       421
+-/+ buffers/cache:         286        715
+Swap: 1153 0 1153
+</code></pre>
+
+<p>第一部分Mem行。该行是针对OS而言的，它认为buffers/cached都是属于被使用,所以它认为free只有232M。存在如下关系：</p>
+
+<pre><code>total(1002M) = used(769M) + free(232M)
+</code></pre>
+
+<p>第二部分(-/+ buffers/cache)从应用程序的角度而言的，Mem行的buffers/cached 是等同可用的，因为buffer/cached是为了提高程序执行的性能，当程序使用内存时，buffer/cached会很快地被使用。</p>
+
+<pre><code>* (-buffers/cache) used内存数：286M (Mem行中的used – buffers – cached)
+* (+buffers/cache) free内存数: 715M (Mem行中的free + buffers + cached)
+</code></pre>
+
+<p><strong>从应用的角度看，可用内存就是-/+ buffers/cache行的free</strong>，如果可用内存非常少，系统可能会动用交换交换分区（如果配置了的话），这样会增加IO开销（可以在iostat命令中提现），降低系统性能。</p>
+
+<h3 id="sar">sar</h3>
+
+<h4 id="网络设备的吞吐率">网络设备的吞吐率</h4>
+
+<p><code>sar -n DEV 1</code> 可以用于查看各个网络设备的吞吐量，判断网络设备的饱和度。</p>
+
+<pre><code>sar -n DEV 1
+
+11时58分49秒     IFACE   rxpck/s   txpck/s    rxkB/s    txkB/s   rxcmp/s   txcmp/s  rxmcst/s
+11时58分50秒        lo    174.75    174.75     99.00     99.00      0.00      0.00      0.00
+11时58分50秒       em1     27.27     19.19     13.53      3.12      0.00      0.00      1.01
+11时58分50秒       em2      6.06      0.00      0.38      0.00      0.00      0.00      1.01
+11时58分50秒       em3     98.99     94.95     37.58      7.10      0.00      0.00      0.00
+11时58分50秒       em4      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+11时58分50秒   docker0      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+11时58分50秒    virbr0      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+11时58分50秒 virbr0-nic     0.00      0.00      0.00      0.00      0.00      0.00      0.00
+</code></pre>
+
+<p>其中，<code>rxkB/s</code>，<code>txkB/s</code>分别表示网卡的单位时间的进出口流量。在排查性能问题时，可以通过网络设备的吞吐量，判断网络设备是否已经饱和。</p>
+
+<h4 id="tcp连接状态">TCP连接状态</h4>
+
+<p><code>sar -n TCP,ETCP 1</code>可以用于查看TCP连接状态。</p>
+
+<pre><code>sar -n TCP,ETCP 1
+
+12时03分21秒  active/s passive/s    iseg/s    oseg/s
+12时03分22秒     13.13     11.11    277.78    283.84
+</code></pre>
+
+<p>其中参数含义：</p>
+
+<ul>
+<li>active/s：每秒本地发起的TCP连接数，既通过connect调用创建的TCP连接</li>
+<li>passive/s：每秒远程发起的TCP连接数，即通过accept调用创建的TCP连接</li>
+<li>retrans/s：每秒TCP重传数量</li>
+</ul>
+
+<p>TCP连接数可以用来判断性能问题是否由于建立了过多的连接，进一步可以判断是主动发起的连接，还是被动接受的连接。TCP重传可能是因为网络环境恶劣，或者服务器压力过大导致丢包。</p>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="http://www.tuicool.com/articles/mAFjaq">centos 下安装监控工具</a></p>
+
+<p><a href="http://www.cnblogs.com/zhaoyl/p/4325811.html">正确解读free -m</a></p>
+
+<p><a href="http://www.chinaz.com/server/2013/0401/297942.shtml">linux sar 命令详解</a></p>
+
+    
+
+    
+
+    <h4></h4>
+    <ul>
+        
+            <li><a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a></li>
+        
+            <li><a href="/2016/05/23/web-cache/">浏览器缓存</a></li>
+        
+            <li><a href="/2016/05/19/server-concurrent/">服务器并发策略</a></li>
+        
+            <li><a href="/2016/05/10/opcode/">PHP动态脚本Opcode</a></li>
+        
+            <li><a href="/2016/05/05/io-multiplexing/">I/O多路复用</a></li>
+        
+    </ul>
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

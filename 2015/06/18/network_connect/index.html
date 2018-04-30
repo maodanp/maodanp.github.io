@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="非阻塞connect" />
+<meta property="og:description" content="本文总结了关于非阻塞connect的处理细节，实现细节，作简要总结。
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2015/06/18/network_connect/" />
+
+
+
+<meta property="article:published_time" content="2015-05-13T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2015-05-13T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="非阻塞connect"/>
+<meta name="twitter:description" content="本文总结了关于非阻塞connect的处理细节，实现细节，作简要总结。
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2015/06/18/network_connect/">
+
+    <title>
+      
+        非阻塞connect | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2015/06/18/network_connect/">非阻塞connect</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        May 13, 2015
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/network">network</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>本文总结了关于非阻塞connect的处理细节，实现细节，作简要总结。
+</p>
+
+<h3 id="非阻塞connect的用途">非阻塞connect的用途</h3>
+
+<p>非阻塞的TCP套接字上调用connect时，connect将立即返回一个EINPROCESS错误，不过已经发起的TCP三路握手继续进行。接着用select检测这个连接或成功或失败的已建立条件。非阻塞connect有三个用途：</p>
+
+<ol>
+<li>我们可以把三路握手的时间叠加到其他处理上。完成一个connect要花费一个RTT时间，该时间波动范围很大，从几毫秒到几秒。这段时间内也许我们可以执行其他我们想要执行的工作。</li>
+<li>可以使用这个技术同时建立多个连接，这个用途已经随着web浏览器变得流行起来。</li>
+<li>由于我们用select等待连接的完成，因此可以给select设置一个时间限制，从而缩短connect的超时时间。</li>
+</ol>
+
+<h3 id="非阻塞connect的处理细节">非阻塞connect的处理细节</h3>
+
+<ol>
+<li>即使套接字是非阻塞的，如果连接服务器在同一台主机上，在调用connect时连接通常会立刻建立，我们必须处理这种情况。</li>
+<li>源自Berkeley的实现有两条与select和非阻塞I/O相关的规则: 当连接成功建立时，描述字变成可写; 当连接成功出错时，描述字变成即可读又可写</li>
+</ol>
+
+<h3 id="套接字可读-可写的条件">套接字可读/可写的条件</h3>
+
+<p>关于这里的套接字的可读可写，在《Unix网络编程（卷1）》第6章有这样的描述：</p>
+
+<p>对于select返回套接字&rdquo;准备好 可读/可写&rdquo; 的明确条件：</p>
+
+<ol>
+<li><p>下列四个条件中任何一个满足时，套接字准备好读：</p>
+
+<p>a.  套接字缓冲区中的数据字节数大于等于套接字接收缓冲区中低潮限度的当前值。（我们可以用套接字选项SO_RCVLOWAT来设置此低潮限度， TCP/UDP默认值为1）。</p>
+
+<p>b.  连接的读这一半关闭（也就是说接收了FIN端的TCP连接），对这样的套接字的读操作将不阻塞且返回0（即为文件结束符）。</p>
+
+<p>c.   套接字是一个侦听套接字，且已经完成的连接数大于0。这样的监听套接字在accept上一般不会阻塞。</p>
+
+<p>d.  有一个套接字错误待处理。对这样的套接字的读操作将不会阻塞且返回一个错误值（-1）。errno设置成明确的错误条件。</p></li>
+
+<li><p>下列四个条件中任何一个满足时，套接字准备好写：</p>
+
+<p>a.  套接字发送缓冲区中的可用空间字节数大于等于套接字发送缓冲区低潮限度的当前值（ TCP/UDP默认值为2048）。</p>
+
+<p>b.  该连接的写半部关闭，对这样的套接字的写操作将产生SIGPIPE信号（参见上篇《服务器关闭与TCP异常》）。</p>
+
+<p>c.  使用非阻塞connect的套接字已经建立连接，或者connect已经以失败告终。</p>
+
+<p>d.  其上有一个套接字错误待处理。对这样的套接字的写操作将不阻塞并返回-1，同时把errno设置为确切的错误条件。</p></li>
+</ol>
+
+<p>注意：当某个套接字上发生错误时，它将由select标记为既可读又可写。</p>
+
+<h3 id="代码分析">代码分析</h3>
+
+<p>以下为常用的非阻塞connect的实现模块（摘录自《Unix网络编程》 Unit16）</p>
+
+<pre><code>int connect_nonb(int sockfd, const SA *saptr, socklen_t salen, int nsec) {
+　　int flags, n, error;
+　　socklen_t len;
+　　fd_set rset, wset;
+　　struct timeval tval;
+　　/* 获取当前socket的属性， 并设置 noblocking 属性 */
+　　flags = fcntl(sockfd, F_GETFL, 0);
+　　fcntl(sockfd, F_SETFL, flags | O_NOBLOCK);
+　　errno = 0;
+     /*=========================================
+      期望获得的错误(EINPROGRESS):
+           表示连接建立已经启动但尚未完成
+      其他错误则返回给本函数的调用者
+     =========================================*/
+　　if ( (n = connect(sockfd, saptr, salen)) &lt; 0)
+　　if (errno != EINPROGRESS)  
+　　return (-1);
+
+　　/* 这里可以做任何其它的操作*/
+
+　　if (n == 0)
+　　goto done;       /* 服务器与客户端为同一个主机, 会返回 0*/
+　　FD_ZERO(&amp;rset);
+　　FD_SET(sockfd, &amp;rset);
+　　wset = rset;  
+        tval.tv_sec = nsec;
+        tval.tv_usec = 0;
+     /*=========================================
+     如果nsec 为0，将使用缺省的超时时间，即其结构指针为 NULL
+     如果select的返回值为0，则表示超时:
+        关闭套接字
+        返回ETIMEOUT错误给调用者
+    =========================================*/
+　　if ((n = select(sockfd+1, &amp;rset, &amp;west, NULL,nsec ?tval:NULL)) == 0)
+    {
+　　  close(sockfd);
+　　  errno = ETIMEOUT;
+　　  return (-1);
+　  }
+    /*====================================================
+     检查描述符的可读、可写
+     需要getsockopt检查套接字上是否存在待处理错误，判断连接建立是否成功了:
+        因为套接字上发生错误时，它将由select标记为既可读又可写
+     这里getsockopt存在移植性问题(以下代码兼容两种情况)：
+        Berkeley实现, getsockopt返回0，error中返回待处理错误
+        Solaris中getsockopt返回-1，error中返回待处理错误
+    ====================================================*/
+　　if(FD_ISSET(sockfd, &amp;rset) || FD_ISSET(sockfd, &amp;west))
+        {
+
+　　  len = sizeof(error);
+　　  if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &amp;error, &amp;len) &lt; 0)
+　　  return (-1);
+　   }
+　　else err_quit(“select error: sockfd not set”);
+　　done:
+　　fcntl(sockfd, F_SETFL, flags);  /* 恢复socket 属性*/
+　　if (error)
+  {
+　　close(sockfd);
+　　errno = error;
+　　return (-1);
+　}
+　　Return (0);
+}
+</code></pre>
+
+<h3 id="移植问题">移植问题</h3>
+
+<p>首先，调用select之前，有可能连接已经建立并由来自对端的数据到达。该情况下，即使套接字上不发生错误，套接字也是既可读又可写，这和连接简历失败情况下套接字的读写条件一样。</p>
+
+<p>除了getsockopt调用，还有其他方式可以判断连接建立是否成功么？UNIX网络编程提供的集中方案：</p>
+
+<ol>
+<li>调用getpeername代替 getsockopt。如果getpeername以ENOTCONN错误失败返回，那么连接建立已经失败，我们必须接着以SO_ERROR调用getsockopt取得套接字上待处理的错误；</li>
+<li>调用read,读取长度为0字节的数据.如果read调用失败,则表示连接建立失败,而且read返回的errno指明了连接失败的原因.如果连接建立成功,read应该返回0；</li>
+<li>再调用一次connect.它应该失败,如果错误errno是EISCONN,就表示套接口已经建立,而且第一次连接是成功的;否则,连接就是失败的。</li>
+</ol>
+
+<h3 id="参考文章">参考文章</h3>
+
+<p>UNIX网络编程卷1： Unit16 非阻塞connect</p>
+
+    
+
+    
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

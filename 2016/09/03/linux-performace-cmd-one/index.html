@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="liunx性能检测常用命令(一)" />
+<meta property="og:description" content="作为后端研发人员，了解Linux服务器的性能状态是非常必要的，Linux设计的性能检测命令也很多，如何在最短时间内定位到影响服务器性能的瓶颈，这也是每个研发人员的必备的技能之一。
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/09/03/linux-performace-cmd-one/" />
+
+
+
+<meta property="article:published_time" content="2016-09-03T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-09-03T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="liunx性能检测常用命令(一)"/>
+<meta name="twitter:description" content="作为后端研发人员，了解Linux服务器的性能状态是非常必要的，Linux设计的性能检测命令也很多，如何在最短时间内定位到影响服务器性能的瓶颈，这也是每个研发人员的必备的技能之一。
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/09/03/linux-performace-cmd-one/">
+
+    <title>
+      
+        liunx性能检测常用命令(一) | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Sep 3, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/linux">Linux</a>
+    
+        <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>作为后端研发人员，了解Linux服务器的性能状态是非常必要的，Linux设计的性能检测命令也很多，如何在最短时间内定位到影响服务器性能的瓶颈，这也是每个研发人员的必备的技能之一。
+</p>
+
+<h3 id="uptime">uptime</h3>
+
+<p>以下是<code>uptime</code>的输出信息：</p>
+
+<pre><code>04:03:58 up 10 days, 13:19, 1 user, load average: 0.54, 0.40, 0.20
+</code></pre>
+
+<p>其中，0.54, 0.40, 0.20，最近1分钟、5分钟、15分钟系统的负载。</p>
+
+<p>通过这三个数据，可以了解服务器负载是在趋于紧张还是趋于缓解。如果1分钟平均负载很高，而15分钟平均负载很低，说明服务器正在命令高负载情况，需要进一步排查CPU资源都消耗在了哪里；反之，如果15分钟平均负载很高，1分钟平均负载较低，则有可能是CPU资源紧张时刻已经过去。</p>
+
+<h4 id="系统负载">系统负载</h4>
+
+<p>系统平均负载被定义为在特定时间间隔内运行队列中的平均进程数。如果一个进程满足以下条件就会认为位于运行队列中：</p>
+
+<ul>
+<li>它没有在等待I/O操作的结果</li>
+<li>它没有主动进入等待状态</li>
+<li>没有被停止</li>
+</ul>
+
+<h4 id="负载高-or-低">负载高 or 低</h4>
+
+<p>一般来说，每个CPU内核当前活动进程数不大于3，则系统运行表现良好。也就是如果你的主机是四核cpu的话，那么只要uptime最后输出的一串字符数值小于12即表示系统负载不是很严重。</p>
+
+<h3 id="dmesg">dmesg</h3>
+
+<p>dmesg命令显示linux内核的环形缓冲区信息，我们可以从中获得诸如系统架构、cpu、挂载的硬件，内存等多个层次的系统信息。这也有助于我们排查性能问题。</p>
+
+<p>一般我们会将<code>dmesg</code>结合命令<code>more</code>、<code>less</code>、<code>head</code>、<code>tail</code>、<code>grep</code>等使用，打印出我们需要的信息，或者过滤掉我们不需要的信息。</p>
+
+<ul>
+<li><code>dmesg | head -20</code> 显示前20行的内核信息</li>
+<li><code>dmesg | tail -20</code> 显示后20行的内核信息</li>
+<li><code>dmesg | grep sda</code> 搜索包含sda关键字的信息</li>
+<li><code>tail -f /var/log/dmesg</code> 或者 <code>watch &quot;dmesg | tail&quot;</code> 实时监控dmesg的日志输出</li>
+</ul>
+
+<h3 id="vmstat">vmstat</h3>
+
+<p>vmstat命令每行会输出一些系统核心指标，这些指标可以让我们更详细的了解系统状态。可以展现给定时间间隔的服务器的状态值,包括服务器的CPU使用率，内存使用，虚拟内存交换情况,IO读写情况。</p>
+
+<pre><code>vmstat 1
+
+procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 1  0 2593888 45303876 18504760 37989512    0    0     2   700    0    0  7  2 89  2  0
+ 0  0 2593888 45303964 18504760 37989644    0    0     0   764 11204 21249  3  1 96  0  0
+ 1  0 2593888 45302544 18504760 37989668    0    0     0   184 8455 16237  2  1 97  0  0
+ 3  0 2593888 45303872 18504760 37989692    0    0     0   200 13497 27806  5  1 94  0  0
+ 1  0 2593888 45302944 18504760 37989744    0    0     0   300 26437 53148 12  4 85  0  0
+</code></pre>
+
+<p>其中，和性能调优相关的信息包括：</p>
+
+<ul>
+<li><code>r</code> 表示运行和等待CPU时间片的进程数。如果这个数值长期大于机器CPU核数，那么机器的CPU资源已经饱和。</li>
+<li><code>free</code> 系统可用内存数（KB为单位），如果剩余内存不足，也会导致系统性能问题。（具体可以看free命令）。</li>
+<li><code>si, so</code> 交换区写入和读取的数量。如果这个数据不为0，说明系统已经在使用交换区（swap），机器物理内存已经不足，或者存在内存泄漏了。</li>
+<li><code>us, sy, id</code> 这些都代表了CPU时间的消耗，它们分别表示用户时间（user）、系统（内核）时间（sys）、空闲时间（idle）。一般来说，id+us+sy=100，如果us长期大于50%，那就要考虑程序优化了；如果us+sy超过80%，就说明CPU的资源存在不足。</li>
+<li><code>wa</code> 表示IO等待所占的CPU时间百分比。wa值越高，说明IO等待越严重。如果wa值超过20%，说明IO等待严重。</li>
+</ul>
+
+<h3 id="mpstat">mpstat</h3>
+
+<p>mpstat（Multiprocessor Statistics）最大的特点是可以查看多核心cpu中每个计算核心的统计数据；而上述的vmstat只能查看系统整体cpu情况。以下命令是每2秒更新一次，查看多核CPU核心的当前运行状况信息：</p>
+
+<pre><code>mpstat  -P ALL 2
+
+19:43:58     CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest   %idle
+19:43:59     all    0.00    0.00    0.04    0.00    0.00    0.00    0.00    0.00   99.96
+19:43:59       0    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00  100.00
+19:43:59       1    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00  100.00
+.......
+19:43:59      13    0.99    0.00    0.00    0.00    0.00    0.00    0.00    0.00   99.01
+19:43:59      14    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00  100.00
+19:43:59      15    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00  100.00
+</code></pre>
+
+<p>如果有一个CPU占用率特别高，那么我们可以推断有可能是一个单线程应用程序引起的。</p>
+
+<h3 id="pidstat">pidstat</h3>
+
+<p>pidstat主要用于监控全部或指定进程占用系统资源的情况，如CPU，内存、设备IO、任务切换、线程等。</p>
+
+<pre><code>pidstat 1
+Linux 2.6.32.12-0.7-default (linux)             06/18/12        _x86_64_
+
+11:37:19          PID    %usr %system  %guest    %CPU   CPU  Command
+……
+11:37:19        11452    0.00    0.00    0.00    0.00     2  bash
+11:37:19        11509    0.00    0.00    0.00    0.00     3  dd
+</code></pre>
+
+<p>执行<code>pidstat 1</code>，将以采样间隔1s，输出系统启动后*所有活动进程*的cpu统计信息，等同于<code>pidstat -u 1</code></p>
+
+<p>常用命令如下：</p>
+
+<ul>
+<li><code>pidstat -u 1</code> 采样周期1s, 输出所有活动进程的CPU统计信息</li>
+<li><code>pidstat -u -p 2938 1</code> 采样周期1s, 输出进程号为2938的CPU统计信息(通过-p指定进程，下述的内存、磁盘IO统计类似)</li>
+<li><code>pidstat -r 1</code> 采样周期1s, 输出所有活动进程的内存统计信息</li>
+<li><code>pidstat -d 1</code> 采样周期1s, 输出所有活动进程的磁盘IO统计信息</li>
+</ul>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="http://blog.chinaunix.net/uid-24020646-id-1992032.html">linux系统性能调优第一步——性能分析(vmstat)</a></p>
+
+<p><a href="http://www.cnblogs.com/ggjucheng/archive/2012/01/05/2312625.html">Linux vmstat命令实战详解</a></p>
+
+<p><a href="http://www.cnblogs.com/ggjucheng/archive/2013/01/13/2858874.html">Linux 运行进程实时监控pidstat命令详解</a></p>
+
+    
+
+    
+
+    <h4></h4>
+    <ul>
+        
+            <li><a href="/2016/05/23/web-cache/">浏览器缓存</a></li>
+        
+            <li><a href="/2016/05/19/server-concurrent/">服务器并发策略</a></li>
+        
+            <li><a href="/2016/05/10/opcode/">PHP动态脚本Opcode</a></li>
+        
+            <li><a href="/2016/05/05/io-multiplexing/">I/O多路复用</a></li>
+        
+            <li><a href="/2016/05/01/io-model/">服务器的I/O模型</a></li>
+        
+    </ul>
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

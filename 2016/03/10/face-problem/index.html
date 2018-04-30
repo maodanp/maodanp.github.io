@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="程序猿的自我修养 — 直面问题" />
+<meta property="og:description" content="程序员是与机器打交道的，机器识别的是二进制，不知道变通。所以，业务上任何逻辑、语法、性能等等问题都是家常便饭。问题可大可小，轻者内心嘀咕几句，自己debug；重者猛砸键盘鼠标，口爆粗语。
+
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/03/10/face-problem/" />
+
+
+
+<meta property="article:published_time" content="2016-03-10T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-03-10T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="程序猿的自我修养 — 直面问题"/>
+<meta name="twitter:description" content="程序员是与机器打交道的，机器识别的是二进制，不知道变通。所以，业务上任何逻辑、语法、性能等等问题都是家常便饭。问题可大可小，轻者内心嘀咕几句，自己debug；重者猛砸键盘鼠标，口爆粗语。
+
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/03/10/face-problem/">
+
+    <title>
+      
+        程序猿的自我修养 — 直面问题 | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/03/10/face-problem/">程序猿的自我修养 — 直面问题</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        Mar 10, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>程序员是与机器打交道的，机器识别的是二进制，不知道变通。所以，业务上任何逻辑、语法、性能等等问题都是家常便饭。问题可大可小，轻者内心嘀咕几句，自己debug；重者猛砸键盘鼠标，口爆粗语。</p>
+
+<p></p>
+
+<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-03-10-face-problem.jpg" alt="标题图片" /></p>
+
+<p>生活在程序员的环境中，经常能听到 “这不知是问题”，“你看我的打印都正常的”，“见鬼了，之前没出现过这个问题的” 。。。。。。</p>
+
+<h3 id="逃避-or-迎接困难">逃避 or 迎接困难</h3>
+
+<p>各人遇到问题时的反应都不一样, 但大致两种，直面困难者与逃避困难者。其实困难恰恰是我们技术是否进步的风水岭。</p>
+
+<p>为问题而付出努力者，内心有对技术的强烈苛求，会释放内心巨大的潜力，尽可能将问题解决。此类性格会初始程序猿不断成长，从初级到高级、资深、骨灰级。但是人性的弱点决定大多数人都是有惰性的，害怕问题的。潜意识中是畏惧的，这是人原始的想法，但是心理成熟的人、经验丰富的人却很快能调整心态，去定位、解决问题。</p>
+
+<p>Benjamin Franklin说过:</p>
+
+<blockquote>
+<p>“唯有痛苦才会带来教益”</p>
+</blockquote>
+
+<p>但大多数似乎都害怕承受，遇到稍微棘手的bug会赶到自己无能为力，会怀疑自己。面对困难，有些是尽量推脱，将问题推给他人解决；有些则是置之不理，不在乎它们的存在（如果领导不催促的话, 否则自行想象后果）。这种心态、处理问题的态度是不利于自身成长的，特别是在技术更新日新月异的今天。</p>
+
+<p>美国一位作家曾经说过: <code>你不能解决问题，你就会成为问题</code>。 对于职场而言则更是如此。如果属于你的问题却解决不了，或者逃避解决，反复多次，就会面临被解雇的风险(体制内的除外)。</p>
+
+<p>解决办法唯有以积极而主动的态度去迎接困难，Just do it！</p>
+
+<h3 id="承担责任">承担责任</h3>
+
+<p>如果对待问题避之唯恐不及，那么难题依然如山一样横亘在我们面前；请教别人解决，一两次还行，次数多了就会让人生厌了，唯有承担得起这份责任, 才能得到老板的认（jia）可(xin)。不畏困难，将难题先消灭，不拖沓，不逃避。</p>
+
+<p>不承担自身应付的责任，也就意味着将提升自我技术能力的机会让给了别人。对自身而言，即失去了进步的机会，也增加了团队对你的一份能力怀疑。要为程序员自己代言，不放弃任何机会，不逃避任何问题。</p>
+
+<p><strong>要相信办法总比问题多，而且多得多。</strong></p>
+
+<h3 id="心态平衡">心态平衡</h3>
+
+<p>我们需要保持好心态的平衡。遇到问题不急躁，有病乱投医不是好的解决方式。需要冷静分析，缩小问题的定位范围，而不是忙不的如无头苍蝇乱撞。</p>
+
+<p>《少有人走的路》中有这么一段话：</p>
+
+<blockquote>
+<p>作为成年人，整个一生都充满着选择和决定的机会。他们接受这一事实，就会变成自由的人；无法接受这种事实，永远都会感到自己是个牺牲品。</p>
+</blockquote>
+
+<p>希望上述大家能够共勉，无论是否何种行业，何种处境，积极应对困难，才是积极的人生态度。</p>
+
+    
+
+    
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

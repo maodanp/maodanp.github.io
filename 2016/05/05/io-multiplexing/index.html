@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<meta property="og:title" content="I/O多路复用" />
+<meta property="og:description" content="I/O多路复用是常用的服务器I/O模型，包括select/poll/epoll等方式。本篇针对这几种方式的优缺点分别做讲解。
+
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2016/05/05/io-multiplexing/" />
+
+
+
+<meta property="article:published_time" content="2016-05-05T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2016-05-05T00:00:00&#43;00:00"/>
+
+
+
+
+
+
+
+
+
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="I/O多路复用"/>
+<meta name="twitter:description" content="I/O多路复用是常用的服务器I/O模型，包括select/poll/epoll等方式。本篇针对这几种方式的优缺点分别做讲解。
+
+"/>
+
+
+    <link rel="canonical" href="http://maodanp.github.io/2016/05/05/io-multiplexing/">
+
+    <title>
+      
+        I/O多路复用 | Danping&#39;s Blog
+      
+    </title>
+
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
+
+    
+
+    
+
+    
+  </head>
+  <body>
+    
+      <header class="blog-header">
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+        <a class="navbar-brand" href="/">
+            Danping&#39;s Blog
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+            <ul class="navbar-nav">
+                
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/">主页</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
+                </li>
+                
+                <li class="nav-item ">
+                    <a class="nav-link" href="/about/">关于</a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </nav>
+</header>
+
+    
+
+    
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-lg-8 blog-main">
+
+          
+
+<article class="blog-post">
+    <header>
+        <h2 class="blog-post-title">
+            <a class="text-dark" href="/2016/05/05/io-multiplexing/">I/O多路复用</a>
+        </h2>
+        
+
+
+<div class="blog-post-date text-secondary">
+    
+        May 5, 2016
+    
+    
+         Danping Mao
+    
+</div>
+        
+<div class="blog-post-tags text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+    
+        <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+    
+</div>
+
+        
+<div class="blog-post-categories text-secondary">
+    <strong>:</strong>
+    
+        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+    
+</div>
+
+    </header>
+    <hr>
+    <p>I/O多路复用是常用的服务器I/O模型，包括select/poll/epoll等方式。本篇针对这几种方式的优缺点分别做讲解。</p>
+
+<p></p>
+
+<p>在<a href="/2016/05/01/io-model">上一篇文章</a>中介绍了I/O的几种网络模型，并且提到了多路I/O复用方案，它提供了对大量文件描述符就绪检查的高性能方案，允许进程通过一 种方法来同时监听所有fd，并且快速获得所有就绪的fd，然后只针对这些fd进行数据访问。</p>
+
+<p>I/O多路复用技术适用如下场合：</p>
+
+<ol>
+<li>当客户端处理多个描述符，必须适用适用I/O复用</li>
+<li>TCP服务器既要处理监听套接字，又要处理已连接套接字，一般也要用到I/O复用</li>
+<li>服务器要处理多个服务或协议，一般也要用到I/O复用</li>
+</ol>
+
+<p>目前支持I/O多路复用的系统调用者有select, pselect, poll, epoll。 这些系统调用本质上是同步I/O，它们都需要在读写事件就绪后用户自己负责进行读写。</p>
+
+<h3 id="select">select</h3>
+
+<p>它通过一个select()系统调用来监视包含多个fd的数据，当select()返回后，该数组中就绪的fd便会被北河修改标志位，使得进程可以获得这些fd从而进行后续的读写操作。唯一的优点就是良好的跨平台性，能够支持几乎所有的平台。</p>
+
+<p>但是缺点也非常的明显：
+* 单个进程能够监听的fd数量存在最大限制（Linux上一般为1024, 可以通过宏定义甚至编译内核方式提升这一限制，但会造成效率降低）
+* 调用select()会对所有socket进行一次线性扫描，浪费了一定的开销
+* 需要维护一个用来存放大量fd的数据结构，随着fd数量的增大，用户空间和内核空间的相互拷贝的开销也在增长</p>
+
+<h3 id="poll">poll</h3>
+
+<p>poll和select在本质上差别不大，但是poll是基于链表来存储的，没有最大fd的数量限制。</p>
+
+<blockquote>
+<p>poll本质上和select没有区别，它将用户传入的数组拷贝到内核空间，然后查询每个fd对应的设备状态，如果设备就绪则在设备等待队列中加入一项并继续遍历，如果遍历完所有fd后没有发现就绪设备，则挂起当前进程，直到设备就绪或者主动超时，被唤醒后它又要再次遍历fd。</p>
+</blockquote>
+
+<p>它和select类似，存在缺点：大量fd数组被整体复制于用户态和内核的地址空间之间，不论socket是否处于活跃还是非活跃，大多是没有意义的socket复制。另外select()和epoll()都是“水平触发（Level Triggered）”的方式，如果就绪的fd告诉用户进程，但没有被处理，则下次还会继续报告该fd。</p>
+
+<h3 id="epoll">epoll</h3>
+
+<p>epoll直到Linux2.6才由内核实现的方法，它相对于select和epoll来说，更加灵活，没有描述符的限制。epoll将用户关系的fd事件(EPOLLIN, EPOLLOUT)存放在内核的一个事件表中，这样在用户空间和内核空间的拷贝只需要一次。</p>
+
+<blockquote>
+<p>epoll支持水平和边缘触发，它会通知进程哪些fd刚刚变为就绪状态，但仅仅通知一次。</p>
+</blockquote>
+
+<p>理论上边缘触发的性能要更高些，但是用户层的代码需要一次性循环读完，不然会存在漏读问题。</p>
+
+<blockquote>
+<p>epoll使用“事件”的就绪通知方式，通过epoll_ctl()注册fd，一旦该fd就绪，内核就会采用类似callback的回调机制来激活该fd，epoll_wait()便可以收到通知；</p>
+</blockquote>
+
+<p>这里epoll_wait()返回的是代表就绪fd数量的值，我们只需要去epoll指定的一个数组中一次取得相应数量的fd即可。</p>
+
+<p>epoll相对于select、epoll的优点较为明显：</p>
+
+<ol>
+<li>没有最大并发连接数的限制</li>
+<li>它只管“活跃”的连接，而跟连接总数无关（注意：如果没有大量空闲连接或死连接，epoll效率并不会比select/poll高很多，但是实际网络环境中，效率远高于select和poll）</li>
+<li>内存拷贝，利用mmap()文件映射内存加速与内核空间的消息传递，较少复制拷贝</li>
+</ol>
+
+<p>epoll对fd的操作有两种模式：LT(level trigger)和ET(edge trigger)，默认使用的是LT模式。</p>
+
+<p><code>LT模式</code>： 当fd就绪时，应用程序如果不立即处理时间，下次在epoll_wait返回时，会再次将该fd通知给应用程序，select也属于该类，长期关注socket读写事件，会出现CPU的忙循环（busy loop）问题。</p>
+
+<p><code>ET模式</code>： 内核在描述符就绪的时候只会通知进程一次，如果不处理，下次调用epoll_wait时，将不会通知该事件。也就是说，如果采用该模式，需要一直read/write直到errno变为EAGAIN(或EWOULDBLOCK)。epoll工作在ET时必须使用非阻塞套接字，以避免由于一个fd的阻塞读写影响对其他fd操作。</p>
+
+<h3 id="总结">总结</h3>
+
+<p>由于存在自身的特点，所以在选择select、poll、epoll时要根据具体使用场合：</p>
+
+<ol>
+<li>总的而言epoll的性能最好，但是在连接数少且连接都十分活跃的情况下， select和poll的性能不一定比epoll差，epoll内部有自己的事件通知机制</li>
+<li>由于select是跨平台的系统调用，如果考虑到应用程序的跨平台性，以及连接数的实际情况，也是一种选择方式。</li>
+</ol>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p>《 构建高性能web站点 》 Ch3 服务器并发处理能力</p>
+
+    
+
+    
+
+    <h4></h4>
+    <ul>
+        
+            <li><a href="/2016/05/01/io-model/">服务器的I/O模型</a></li>
+        
+            <li><a href="/2016/04/25/apache-conf/">apache配置与性能</a></li>
+        
+            <li><a href="/2016/04/24/apache-bench/">ApacheBench(ab)压力测试</a></li>
+        
+    </ul>
+
+
+</article>
+
+
+
+        </div>
+
+        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
+    
+        
+
+
+<section>
+    <h4></h4>
+    <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/go/">golang中context包</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
+        </li>
+        
+        <li>
+            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
+        </li>
+        
+    </ol>
+</section>
+
+    
+    
+        <section>
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
+            
+            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
+            
+        </p>
+        
+    
+        
+    
+        
+        <h4></h4>
+        <p>
+            
+            <a class="badge badge-primary" href="/tags/apache">apache</a>
+            
+            <a class="badge badge-primary" href="/tags/golang">golang</a>
+            
+            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
+            
+            <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/network">network</a>
+            
+            <a class="badge badge-primary" href="/tags/php">php</a>
+            
+            <a class="badge badge-primary" href="/tags/redis">redis</a>
+            
+            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
+            
+            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
+            
+            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
+            
+        </p>
+        
+    
+</section>
+    
+</aside>
+
+      </div>
+    </div>
+    
+
+    
+      <footer class="blog-footer w-100">
+    <nav class="navbar navbar-light bg-light">
+        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
+        <p class="w-100 text-center"><a href="#"></a></p>
+    </nav>
+</footer>
+    
+
+    
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>
