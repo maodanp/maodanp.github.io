@@ -6,10 +6,31 @@
     <description>Recent content in 技术志 on Danping&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 16 Sep 2016 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 10 Apr 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://maodanp.github.io/categories/%E6%8A%80%E6%9C%AF%E5%BF%97/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>机器学习之概率论</title>
+      <link>http://maodanp.github.io/2017/04/10/probability/</link>
+      <pubDate>Mon, 10 Apr 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://maodanp.github.io/2017/04/10/probability/</guid>
+      <description>&lt;p&gt;本篇介绍概率统计相关知识，后续机器学习中朴素贝叶斯算法用到了其中贝叶斯的原理，在文本处理方便也有着广泛的应用。
+&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>机器学习之数学分析</title>
+      <link>http://maodanp.github.io/2017/04/03/math-analysis/</link>
+      <pubDate>Mon, 03 Apr 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://maodanp.github.io/2017/04/03/math-analysis/</guid>
+      <description>&lt;p&gt;本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>基于redis的分布式锁的实现方案</title>

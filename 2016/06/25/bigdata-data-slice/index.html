@@ -91,6 +91,7 @@
             </ul>
             
         </div>
+	
     </nav>
 </header>
 
@@ -116,12 +117,12 @@
         Jun 25, 2016
     
     
-         Danping Mao
+        by Danping Mao
     
 </div>
         
 <div class="blog-post-tags text-secondary">
-    <strong>:</strong>
+    <strong>Tags:</strong>
     
         <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
     
@@ -129,7 +130,7 @@
 
         
 <div class="blog-post-categories text-secondary">
-    <strong>:</strong>
+    <strong>Categories:</strong>
     
         <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
     
@@ -238,36 +239,33 @@
 <p>虚拟节点即将一个物理节点虚拟成若干的虚拟节点，分别映射到一致性哈希的环状结构的不同位置。一方面会有更佳的负载均衡，也可以兼顾到机器的异质性问题。</p>
 
 <p>下面简要展示Golang实现的<a href="https://github.com/stathat/consistent">一致性Hash算法</a>的主要结构。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">//定义Hash环，切片中元素为有序的物理节点Hash值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Circle</span> []<span style="color:#66d9ef">uint32</span>
 
-<pre><code class="language-go">//定义Hash环，切片中元素为有序的物理节点Hash值
-type Circle []uint32
 
-
-type Consistent struct {
-	// Hash函数
-    hash  Hash  		
-    // 有序环
-    circle   Circle 
-    //虚拟节点个数
-    virtualNodes int
-    //点到主机的映射（多对一的关系）
-    virtualMap   map[uint32]string
-    //主机列表
-    members      map[string]bool
-    //同步锁
-    sync.RWMutex
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Consistent</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#75715e">// Hash函数
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">hash</span>  <span style="color:#a6e22e">Hash</span>  		
+    <span style="color:#75715e">// 有序环
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">circle</span>   <span style="color:#a6e22e">Circle</span> 
+    <span style="color:#75715e">//虚拟节点个数
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">virtualNodes</span> <span style="color:#66d9ef">int</span>
+    <span style="color:#75715e">//点到主机的映射（多对一的关系）
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">virtualMap</span>   <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">uint32</span>]<span style="color:#66d9ef">string</span>
+    <span style="color:#75715e">//主机列表
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">members</span>      <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">bool</span>
+    <span style="color:#75715e">//同步锁
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
 }
 
-//向Hash环中加入节点
-func (c *Consistent) Add(elt string) 
+<span style="color:#75715e">//向Hash环中加入节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Consistent</span>) <span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">elt</span> <span style="color:#66d9ef">string</span>) 
 
-//从Hash环中删除节点
-func (c *Consistent) Remove(elt string) 
+<span style="color:#75715e">//从Hash环中删除节点
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Consistent</span>) <span style="color:#a6e22e">Remove</span>(<span style="color:#a6e22e">elt</span> <span style="color:#66d9ef">string</span>) 
 
-//根据数据主键，获取存储的节点信息
-func (c *Consistent) Get(key string) string
-</code></pre>
-
+<span style="color:#75715e">//根据数据主键，获取存储的节点信息
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Consistent</span>) <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">string</span></code></pre></div>
 <p>对照上面的结构，大致的结构图如下：</p>
 
 <p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-06-25-bigdata-data-slice-3.png" alt="" /></p>
@@ -295,10 +293,9 @@ func (c *Consistent) Get(key string) string
 <p>大数据日知录:架构与算法 Ch1</p>
 
     
-
     
 
-    <h4></h4>
+    <h4>See also</h4>
     <ul>
         
             <li><a href="/2015/06/18/distrubuted-server/">简单分布式服务器框架</a></li>
@@ -318,8 +315,16 @@ func (c *Consistent) Get(key string) string
 
 
 <section>
-    <h4></h4>
+    <h4>Recent Posts</h4>
     <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2017/04/10/probability/">机器学习之概率论</a>
+        </li>
+        
+        <li>
+            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
+        </li>
         
         <li>
             <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
@@ -333,14 +338,6 @@ func (c *Consistent) Get(key string) string
             <a href="/2016/09/04/go/">golang中context包</a>
         </li>
         
-        <li>
-            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
-        </li>
-        
     </ol>
 </section>
 
@@ -351,7 +348,7 @@ func (c *Consistent) Get(key string) string
         
     
         
-        <h4></h4>
+        <h4>Categories</h4>
         <p>
             
             <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
@@ -366,7 +363,7 @@ func (c *Consistent) Get(key string) string
         
     
         
-        <h4></h4>
+        <h4>Tags</h4>
         <p>
             
             <a class="badge badge-primary" href="/tags/apache">apache</a>
@@ -376,6 +373,8 @@ func (c *Consistent) Get(key string) string
             <a class="badge badge-primary" href="/tags/iptables">iptables</a>
             
             <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
             
             <a class="badge badge-primary" href="/tags/network">network</a>
             
@@ -402,6 +401,7 @@ func (c *Consistent) Get(key string) string
     
 </aside>
 
+
       </div>
     </div>
     
@@ -410,7 +410,7 @@ func (c *Consistent) Get(key string) string
       <footer class="blog-footer w-100">
     <nav class="navbar navbar-light bg-light">
         <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#"></a></p>
+        <p class="w-100 text-center"><a href="#">Back to top</a></p>
     </nav>
 </footer>
     

@@ -91,6 +91,7 @@
             </ul>
             
         </div>
+	
     </nav>
 </header>
 
@@ -116,12 +117,12 @@
         Sep 4, 2016
     
     
-         Danping Mao
+        by Danping Mao
     
 </div>
         
 <div class="blog-post-tags text-secondary">
-    <strong>:</strong>
+    <strong>Tags:</strong>
     
         <a class="badge badge-primary" href="/tags/golang">golang</a>
     
@@ -131,7 +132,7 @@
 
         
 <div class="blog-post-categories text-secondary">
-    <strong>:</strong>
+    <strong>Categories:</strong>
     
         <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
     
@@ -150,25 +151,22 @@
 <h3 id="context接口">Context接口</h3>
 
 <p><strong>context</strong>包的核心是一个<strong>Context</strong>类型：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Context包 携带信息包括过期时间、中止信号，参数值等
+</span><span style="color:#75715e">// context 包里的方法是线程安全的，可以被多个 goroutine 使用
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Context</span> <span style="color:#66d9ef">interface</span> {
 
-<pre><code class="language-go">// Context包 携带信息包括过期时间、中止信号，参数值等
-// context 包里的方法是线程安全的，可以被多个 goroutine 使用
-type Context interface {
+    <span style="color:#75715e">// 当Context被canceled或times out的时候，Done返回一个被close的channel 
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">Done</span>() <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}
 
-    // 当Context被canceled或times out的时候，Done返回一个被close的channel 
-    Done() &lt;-chan struct{}
+    <span style="color:#75715e">// 在Done的channel被closed后， Err代表被关闭的原因   
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">Err</span>() <span style="color:#66d9ef">error</span>
 
-    // 在Done的channel被closed后， Err代表被关闭的原因   
-    Err() error
+    <span style="color:#75715e">// 如果存在，Deadline返回Context将要关闭的时间 
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">Deadline</span>() (<span style="color:#a6e22e">deadline</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>, <span style="color:#a6e22e">ok</span> <span style="color:#66d9ef">bool</span>)
 
-    // 如果存在，Deadline返回Context将要关闭的时间 
-    Deadline() (deadline time.Time, ok bool)
-
-    // 如果存在，Value返回与key相关了的值，不存在返回nil  
-    Value(key interface{}) interface{}
-}
-</code></pre>
-
+    <span style="color:#75715e">// 如果存在，Value返回与key相关了的值，不存在返回nil  
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">Value</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">interface</span>{}) <span style="color:#66d9ef">interface</span>{}
+}</code></pre></div>
 <p>其中的Done方法返回了一个通道，代表了Context的一个中止信号：当这个通道关闭，函数将中止并且立即返回。Err方法也将返回为何被终止的错误。</p>
 
 <p>Done方法返回的通道是只读的，所以Context并没有提供Cancel方法来关闭通道。这个也比较好理解，比如当一个协程创建了很多的子协程，这些子协程不能够中止父协程的。而父协程则可以通过WithCancel函数(后面描述)提供的一种方式来中止子协程。</p>
@@ -180,118 +178,96 @@ type Context interface {
 <h4 id="cancelctx">cancelCtx</h4>
 
 <p>cancelCtx结构体继承了Context ，实现了canceler方法：</p>
-
-<pre><code class="language-go">//*cancelCtx 和 *timerCtx 都实现了canceler接口，实现该接口的类型都可以被直接canceled
-type canceler interface {
-    cancel(removeFromParent bool, err error)
-    Done() &lt;-chan struct{}
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">//*cancelCtx 和 *timerCtx 都实现了canceler接口，实现该接口的类型都可以被直接canceled
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">canceler</span> <span style="color:#66d9ef">interface</span> {
+    <span style="color:#a6e22e">cancel</span>(<span style="color:#a6e22e">removeFromParent</span> <span style="color:#66d9ef">bool</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>)
+    <span style="color:#a6e22e">Done</span>() <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}
 }        
 
-type cancelCtx struct {
-    Context
-    done chan struct{} // closed by the first cancel call.
-    mu       sync.Mutex
-    children map[canceler]bool // set to nil by the first cancel call
-    err      error             
-}
-
-</code></pre>
-
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">cancelCtx</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">Context</span>
+    <span style="color:#a6e22e">done</span> <span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{} <span style="color:#75715e">// closed by the first cancel call.
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">mu</span>       <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>
+    <span style="color:#a6e22e">children</span> <span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">canceler</span>]<span style="color:#66d9ef">bool</span> <span style="color:#75715e">// set to nil by the first cancel call
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">err</span>      <span style="color:#66d9ef">error</span>             
+}</code></pre></div>
 <p>其中，核心方法是<code>cancel</code>。该方法会依次遍历c.children，每个child分别cancel；如果设置了removeFromParent，则将c从其parent的children中删除</p>
-
-<pre><code class="language-go">func (c *cancelCtx) cancel(removeFromParent bool, err error) {
-      //...
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">cancelCtx</span>) <span style="color:#a6e22e">cancel</span>(<span style="color:#a6e22e">removeFromParent</span> <span style="color:#66d9ef">bool</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) {
+      <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>}</code></pre></div>
 <p>我们可以通过WithCancel函数来创建一个cancelCtx。返回一个 cancelCtx的结构，同时也会返回一个CancelFunc自定义函数，调用该函数，将会关闭对应的c.done，也就是让他的后代goroutine退出。</p>
-
-<pre><code class="language-go">func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
-    //...
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithCancel</span>(<span style="color:#a6e22e">parent</span> <span style="color:#a6e22e">Context</span>) (<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">cancel</span> <span style="color:#a6e22e">CancelFunc</span>) {
+    <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>}</code></pre></div>
 <h4 id="timerctx">timerCtx</h4>
 
 <p>timerCtx 结构继承 cancelCtx。</p>
-
-<pre><code class="language-go">type timerCtx struct {
-    cancelCtx //此处的封装为了继承来自于cancelCtx的方法，cancelCtx.Context才是父亲节点的指针
-    timer *time.Timer // 计时器
-    deadline time.Time
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">timerCtx</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">cancelCtx</span> <span style="color:#75715e">//此处的封装为了继承来自于cancelCtx的方法，cancelCtx.Context才是父亲节点的指针
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">timer</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Timer</span> <span style="color:#75715e">// 计时器
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">deadline</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>
+}</code></pre></div>
 <p>我们可以通过下面两个函数来创建timerCtx：</p>
-
-<pre><code class="language-go">func WithDeadline(parent Context, deadline time.Time) (Context, CancelFunc)
-func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithDeadline</span>(<span style="color:#a6e22e">parent</span> <span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">deadline</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>) (<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">CancelFunc</span>)
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">parent</span> <span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) (<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">CancelFunc</span>)</code></pre></div>
 <p>WithDeadline 和 WithTimeout 是相似的，WithDeadline 是设置具体的deadline时间，到达deadline的时候，派生goroutine退出；WithTimeout设置的是时间间隔。</p>
 
 <h4 id="valuectx">valueCtx</h4>
 
 <p>valueCtx 结构实现了Cancel接口。该结构多了一对key,val的值。其派生goroutine通过Context以及key都能得到响应的val。</p>
-
-<pre><code class="language-go">type valueCtx struct {
-    Context
-    key, val interface{}
-}
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">valueCtx</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">Context</span>
+    <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">val</span> <span style="color:#66d9ef">interface</span>{}
+}</code></pre></div>
 <h3 id="示例">示例</h3>
 
 <p>下面模拟了一个累加器，通过context传递累加的上限。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 
-<pre><code class="language-go">package main
-
-import (
-        &quot;context&quot;   //go1.7以上版本直接使用标准库中的context
-        &quot;fmt&quot;
-        &quot;time&quot;
+<span style="color:#f92672">import</span> (
+        <span style="color:#e6db74">&#34;context&#34;</span>   <span style="color:#75715e">//go1.7以上版本直接使用标准库中的context
+</span><span style="color:#75715e"></span>        <span style="color:#e6db74">&#34;fmt&#34;</span>
+        <span style="color:#e6db74">&#34;time&#34;</span>
 )
 
-// 模拟累加器
-func accumulator(ctx context.Context) (res int) {
-        loop, ok := ctx.Value(userKey).(int)
-        if !ok {
-                return 0
+<span style="color:#75715e">// 模拟累加器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">accumulator</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>) (<span style="color:#a6e22e">res</span> <span style="color:#66d9ef">int</span>) {
+        <span style="color:#a6e22e">loop</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Value</span>(<span style="color:#a6e22e">userKey</span>).(<span style="color:#66d9ef">int</span>)
+        <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+                <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
         }
 
-        // 直到累加结束或者收到closed channel
-        for i := 0; i &lt; loop; i++ {
-                res += i
-                select {
-                case &lt;-ctx.Done():
-                        fmt.Println(&quot;need to done&quot;)
-                        return res
-                default:
+        <span style="color:#75715e">// 直到累加结束或者收到closed channel
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">loop</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+                <span style="color:#a6e22e">res</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">i</span>
+                <span style="color:#66d9ef">select</span> {
+                <span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Done</span>():
+                        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;need to done&#34;</span>)
+                        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>
+                <span style="color:#66d9ef">default</span>:
                 }
         }
-        fmt.Println(&quot;finish calculate&quot;)
-        return res
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;finish calculate&#34;</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>
 }
 
-type key int
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">int</span>
 
-const userKey key = 0
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">userKey</span> <span style="color:#a6e22e">key</span> = <span style="color:#ae81ff">0</span>
 
-func main() {
-        // cancelCtx
-        ctx, cancel := context.WithCancel(context.Background())
-        // valueCtx
-        newCtx := context.WithValue(ctx, userKey, 10000000)
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+        <span style="color:#75715e">// cancelCtx
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">cancel</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithCancel</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>())
+        <span style="color:#75715e">// valueCtx
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">newCtx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithValue</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">userKey</span>, <span style="color:#ae81ff">10000000</span>)
 
-        go func() {
-                time.Sleep(1 * time.Millisecond)
-                cancel() // 在调用处主动取消
-        }()
-        res := accumulator(newCtx)
-        fmt.Printf(&quot;accumulato result: %d\n&quot;, res)
-}
-</code></pre>
-
+        <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+                <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Millisecond</span>)
+                <span style="color:#a6e22e">cancel</span>() <span style="color:#75715e">// 在调用处主动取消
+</span><span style="color:#75715e"></span>        }()
+        <span style="color:#a6e22e">res</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">accumulator</span>(<span style="color:#a6e22e">newCtx</span>)
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;accumulato result: %d\n&#34;</span>, <span style="color:#a6e22e">res</span>)
+}</code></pre></div>
 <h3 id="总结">总结</h3>
 
 <p>在请求的输入输出函数中，一般讲context作为首个参数传递。它能够非常简便的控制超时、中止等操作，并且也能够确保信息在goroutine中的安全传输。</p>
@@ -301,10 +277,9 @@ func main() {
 <p><a href="https://blog.golang.org/context">Go Concurrency Patterns: Context</a></p>
 
     
-
     
 
-    <h4></h4>
+    <h4>See also</h4>
     <ul>
         
             <li><a href="/2016/04/30/golang-interface/">Golang — 面向对象语言(方法、接口、匿名组合)</a></li>
@@ -332,8 +307,16 @@ func main() {
 
 
 <section>
-    <h4></h4>
+    <h4>Recent Posts</h4>
     <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2017/04/10/probability/">机器学习之概率论</a>
+        </li>
+        
+        <li>
+            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
+        </li>
         
         <li>
             <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
@@ -347,14 +330,6 @@ func main() {
             <a href="/2016/09/04/go/">golang中context包</a>
         </li>
         
-        <li>
-            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
-        </li>
-        
     </ol>
 </section>
 
@@ -365,7 +340,7 @@ func main() {
         
     
         
-        <h4></h4>
+        <h4>Categories</h4>
         <p>
             
             <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
@@ -380,7 +355,7 @@ func main() {
         
     
         
-        <h4></h4>
+        <h4>Tags</h4>
         <p>
             
             <a class="badge badge-primary" href="/tags/apache">apache</a>
@@ -390,6 +365,8 @@ func main() {
             <a class="badge badge-primary" href="/tags/iptables">iptables</a>
             
             <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
             
             <a class="badge badge-primary" href="/tags/network">network</a>
             
@@ -416,6 +393,7 @@ func main() {
     
 </aside>
 
+
       </div>
     </div>
     
@@ -424,7 +402,7 @@ func main() {
       <footer class="blog-footer w-100">
     <nav class="navbar navbar-light bg-light">
         <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#"></a></p>
+        <p class="w-100 text-center"><a href="#">Back to top</a></p>
     </nav>
 </footer>
     

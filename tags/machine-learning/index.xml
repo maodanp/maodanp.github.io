@@ -1,23 +1,33 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Machine Learning on Bootstrap demo</title>
-    <link>https://example.com/tags/machine-learning/</link>
-    <description>Recent content in Machine Learning on Bootstrap demo</description>
+    <title>Machine Learning on Danping&#39;s Blog</title>
+    <link>http://maodanp.github.io/tags/machine-learning/</link>
+    <description>Recent content in Machine Learning on Danping&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 01 Mar 2016 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 10 Apr 2017 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://example.com/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://maodanp.github.io/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>理解golang中的切片</title>
-      <link>https://example.com/2016/03/01/understanding-slices-in-go-programming/</link>
-      <pubDate>Tue, 01 Mar 2016 00:00:00 +0000</pubDate>
+      <title>机器学习之概率论</title>
+      <link>http://maodanp.github.io/2017/04/10/probability/</link>
+      <pubDate>Mon, 10 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://example.com/2016/03/01/understanding-slices-in-go-programming/</guid>
-      <description>&lt;p&gt;Golang的初学者有时会被slice所困扰，不理解其内部原理，使用起来总是担心是否有复制的开销。 本文翻译自&lt;a href=&#34;https://www.goinggo.net/2013/08/understanding-slices-in-go-programming.html&#34;&gt;Understanding Slices in Go Programming&lt;/a&gt;，作者对其内部原理作了深入分析。相信读完将会有不一样的感受。&lt;/p&gt;
+      <guid>http://maodanp.github.io/2017/04/10/probability/</guid>
+      <description>&lt;p&gt;本篇介绍概率统计相关知识，后续机器学习中朴素贝叶斯算法用到了其中贝叶斯的原理，在文本处理方便也有着广泛的应用。
+&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>机器学习之数学分析</title>
+      <link>http://maodanp.github.io/2017/04/03/math-analysis/</link>
+      <pubDate>Mon, 03 Apr 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://maodanp.github.io/2017/04/03/math-analysis/</guid>
+      <description>&lt;p&gt;本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。&lt;/p&gt;
 
 &lt;p&gt;&lt;/p&gt;</description>
     </item>

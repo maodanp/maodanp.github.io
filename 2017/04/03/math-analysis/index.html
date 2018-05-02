@@ -4,14 +4,19 @@
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-<meta property="og:title" content="代理" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="http://maodanp.github.io/tags/%E4%BB%A3%E7%90%86/" />
+<meta property="og:title" content="机器学习之数学分析" />
+<meta property="og:description" content="本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。
+
+" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://maodanp.github.io/2017/04/03/math-analysis/" />
 
 
 
-<meta property="og:updated_time" content="2016-09-11T00:00:00&#43;00:00"/>
+<meta property="article:published_time" content="2017-04-03T00:00:00&#43;00:00"/>
+
+<meta property="article:modified_time" content="2017-04-03T00:00:00&#43;00:00"/>
+
 
 
 
@@ -23,15 +28,17 @@
 
 
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="代理"/>
-<meta name="twitter:description" content=""/>
+<meta name="twitter:title" content="机器学习之数学分析"/>
+<meta name="twitter:description" content="本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。
+
+"/>
 
 
-    <link rel="canonical" href="http://maodanp.github.io/tags/%E4%BB%A3%E7%90%86/">
+    <link rel="canonical" href="http://maodanp.github.io/2017/04/03/math-analysis/">
 
     <title>
       
-        代理 | Danping&#39;s Blog
+        机器学习之数学分析 | Danping&#39;s Blog
       
     </title>
 
@@ -40,8 +47,6 @@
 
     <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
 
-    
-    <link href="http://maodanp.github.io/tags/%E4%BB%A3%E7%90%86/index.xml" rel="alternate" type="application/rss+xml" title="Danping&#39;s Blog" />
     
 
     
@@ -86,7 +91,34 @@
             </ul>
             
         </div>
-	
+	<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+  });
+  MathJax.Hub.Queue(function() {
+    
+    
+    
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+
+  MathJax.Hub.Config({
+  
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+  });
+</script>
     </nav>
 </header>
 
@@ -99,21 +131,17 @@
 
           
 
-
-
-
-    
-        <article class="blog-post">
+<article class="blog-post">
     <header>
         <h2 class="blog-post-title">
-            <a class="text-dark" href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
+            <a class="text-dark" href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
         </h2>
         
 
 
 <div class="blog-post-date text-secondary">
     
-        Sep 11, 2016
+        Apr 3, 2017
     
     
         by Danping Mao
@@ -123,9 +151,7 @@
 <div class="blog-post-tags text-secondary">
     <strong>Tags:</strong>
     
-        <a class="badge badge-primary" href="/tags/golang">golang</a>
-    
-        <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
+        <a class="badge badge-primary" href="/tags/machine-learning">machine learning</a>
     
 </div>
 
@@ -138,64 +164,155 @@
 </div>
 
     </header>
-    <p>最近遇到了几次HTTP(s)如何通过代理访问内网的问题，本篇讲述基于proxy发送/接收HTTP(s)请求的客户端实现方法。</p>
+    <hr>
+    <p>本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。</p>
 
 <p></p>
-    <p></p>
-    <a href="/2016/09/11/golang-https-proxy/">Read More →</a>
+
+<h3 id="导数">导数</h3>
+
+<h4 id="导数概念">导数概念</h4>
+
+<ul>
+<li>简单而言，导数就是曲线的斜率，是曲线变化快慢的反应</li>
+<li>二阶导数是斜率变化快慢的反应，表征曲线凸凹性</li>
+</ul>
+
+<h4 id="常用函数的导数">常用函数的导数</h4>
+
+<p><code>$$
+(sinx)'=cosx \qquad (cosx)'=-sinx \\\\\\
+(a^x)'=a^xlna \qquad (e^x)=e^x \\\\\\
+(log_ax)'=\frac{1}{x}log_ae \qquad (lnx)'=\frac{1}{x} \\\\\\
+(u+v)'=u'+v' \qquad (uv)'=u'v+uv'
+$$</code></p>
+
+<h4 id="具体应用">具体应用</h4>
+
+<ul>
+<li><p>已知函数$f(x)=x^x, x \gt 0$, 求$f(x)$的最小值
+<code>$$
+t=x^x \\\\\\
+\to lnt=xlnx \\\\\\
+\stackrel {两边对x求导} \to \frac{1}{t}t'=lnx+1 \\\\\\
+\stackrel {t'=0} \to lnx+1=0 \\\\\\
+\to x=e^{-1}\\\\\\
+\to t=e^{-\frac{1}{e}}
+$$</code></p></li>
+
+<li><p>当$N \to \infty$, $lnN!$ 值？
+<code>$$
+lnN!=\sum_{i=1}^Nlni \approx \int_{1}^Nlnxdx \\\\\\
+=xlnx|_1^N-\int_{1}^Nxdlnx \\\\\\
+=NlnN-\int_{1}^Nx \cdot \frac{1}{x}dx \\\\\\
+=NlnN - N + 1 \to NlnN - N
+$$</code></p>
+
+<h3 id="taylor-公式-maclaurin公式">Taylor 公式-Maclaurin公式</h3>
+
+<p><code>
+$$
+f(a+x) = f(a)+f'(a)x+o(x)
+$$
+</code>
+其中，$o(h)$是比$h$高阶的无穷小。</p></li>
+</ul>
+
+<p>Taylor公式可以把一个可导的函数拆成若干个多项式之和，当n越大，若干个多项式之和逼近于原函数的值
+<code>$$
+f(x)=f(x_0)+f'(x-x_0)+\frac{f''(x_0)}{2!}(x-x_0)^2+\ldots+\frac{f^{(n)}(x_0)}{n!}(x-x_0)^n+R_n(x) \\\\\\
+f(x)=f(x_0)+f'(0)x+\frac{f''(x_)}{2!}(x)^2+\ldots+\frac{f^{(n)}(0)}{n!}(x)^n+o(x^n)
+$$</code></p>
+
+<h4 id="具体应用-1">具体应用</h4>
+
+<p>数值计算: 初等函数值的计算（在原点展开）
+<code>$$
+sin(x)=x-\frac{x^3}{3!}+\frac{x^5}{5!}-\frac{x^7}{7!}+\ldots+(-1)^{m-1}\cdot\frac{x^{2m-1}}{(2m-1)!}+R_{2m}\\\\\\
+e^x=1+x+\frac{x^2}{2!}+\frac{x^3}{3!}+\ldots+\frac{x^n}{n!}+R_n
+$$</code></p>
+
+<ul>
+<li>计算$e^x$</li>
+</ul>
+
+<p>求整数k和小数r，使得 $x=k \cdot ln2 + r, |r|\lt0.5 \cdot ln2$
+<code>$$
+e^x=e^{k\cdot ln2+r} \\\\\\
+=e^{k\cdot ln2}e^{r} \\\\\\
+=2^k\cdot e^r
+$$</code></p>
+
+<ul>
+<li>Gini系数</li>
+</ul>
+
+<p>考察Gini系数的图像、熵、分类误差率三者之间的关系。将$f(x)=-lnx$在$x=1$处一阶展开，忽略高阶无穷小，得到$f(x) \approx 1-x$.
+<code>$$
+H(x)=-\sum_{k=1}^Kp_klnp_k  \\\\\\ 
+\approx \sum_{k=1}^Kp_k(1-p_k)
+$$</code></p>
+
+<h3 id="方向导数与梯度">方向导数与梯度</h3>
+
+<h4 id="方向导数">方向导数</h4>
+
+<p>如果函数$z=f(x,y)$在点$P(x,y)$是可微分的，那么函数在该点沿任一方向L的方向导数都存在，且有：
+<code>$$
+\frac{\partial f}{\partial l} = \frac{\partial f}{\partial x}cos \varphi + \frac{\partial f}{\partial y}sin \varphi
+$$</code>
+其中，$\varphi$ 为$x$轴到方向$L$的转角。</p>
+
+<h4 id="梯度">梯度</h4>
+
+<p>设函数$z=f(x,y)$在平面区域D内具有一阶连续偏导数，则对于每一个点$P(x,y)\in D$,向量
+<code>$$
+(\frac{\partial f}{\partial x}, \frac{\partial f}{\partial y})
+$$</code>
+为函数$z=f(x,y)$在点P的梯度，记做$gradf(x,y)$。</p>
+
+<ul>
+<li>梯度的方向是函数在改点变化最快的方向</li>
+<li>梯度下降法</li>
+</ul>
+
+<h3 id="组合数与信息熵关系">组合数与信息熵关系</h3>
+
+<h4 id="组合数">组合数</h4>
+
+<ul>
+<li><p>把$n$个物品分成$k$组，使得每组物品的个数分别为$n_1, n_2,\ldots,n_k$,$(n=n_1+n_2+\ldots+n_k)$,则不同的分组方法有$\frac{n!}{n_1! \cdot n_2! \cdot n_3! \ldots n_k!}$种。</p></li>
+
+<li><p>上述的简化版本，即n个物品分成2组，第一组m个，第二组$n-m$个，则分组方法有: $\frac{n!}{n! \cdot (n-m)!}$，即 ${n \choose m}$。</p></li>
+</ul>
+
+<h4 id="组合数背后的秘密">组合数背后的秘密</h4>
+
+<p><code>$$
+\begin{align}
+H
+&amp;=\frac{1}{N}ln\frac{N!}{\prod_{i=1}^kn_i!}\\
+&amp;=\frac{1}{N}ln(N!)-\frac{1}{N}\sum_{i=1}^kln(n_i!) \\
+&amp;\to (lnN-1)-\frac{1}{N}\sum_{i=1}^kn_i(lnn_i-1) =lnN-\frac{1}{N}\sum_{i=1}^kn_ilnn_i\\
+&amp;=-\frac{1}{N}((\sum_{i=1}^kn_ilnn_i)-NlnN) =-\frac{1}{N}\sum_{i=1}^k(n_ilnn_i-n_ilnN)\\
+&amp;=-\frac{1}{N}\sum_{i=1}^k(n_iln\frac{n_i}{N})=-\sum_{i=1}^k(\frac{n_i}{N}ln\frac{n_i}{N}) \\
+&amp;\to -\sum_{i=1}^k(p_ilnp_i)
+\end{align}
+$$</code></p>
+
+<h3 id="参考阅读">参考阅读</h3>
+
+<p><a href="https://www.zhihu.com/question/36301367">如何直观形象的理解方向导数与梯度</a></p>
+
+<p><a href="https://wenku.baidu.com/view/5dfb0b5a16fc700aba68fc1f.html">多元函数微分学</a></p>
+
+<p><a href="https://www.cnblogs.com/pinard/p/5970503.html">梯度下降小结</a></p>
+
+    
+    
+
+
 </article>
-    
-
-
-
-    
-        <article class="blog-post">
-    <header>
-        <h2 class="blog-post-title">
-            <a class="text-dark" href="/2016/09/04/go/">golang中context包</a>
-        </h2>
-        
-
-
-<div class="blog-post-date text-secondary">
-    
-        Sep 4, 2016
-    
-    
-        by Danping Mao
-    
-</div>
-        
-<div class="blog-post-tags text-secondary">
-    <strong>Tags:</strong>
-    
-        <a class="badge badge-primary" href="/tags/golang">golang</a>
-    
-        <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
-    
-</div>
-
-        
-<div class="blog-post-categories text-secondary">
-    <strong>Categories:</strong>
-    
-        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-    
-</div>
-
-    </header>
-    <p>在阅读一些标准库(net、net/http、os/exec)时，经常会遇到context包，大致知道是当做关闭事件触发用的。阅读完GoTeam的文章<a href="https://blog.golang.org/context">Go Concurrency Patterns: Context</a>，才更深刻的了解了其设计意图。</p>
-
-<p></p>
-    <p></p>
-    <a href="/2016/09/04/go/">Read More →</a>
-</article>
-    
-
-
-
-
-
 
 
 

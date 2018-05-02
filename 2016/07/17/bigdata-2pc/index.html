@@ -91,6 +91,7 @@
             </ul>
             
         </div>
+	
     </nav>
 </header>
 
@@ -116,12 +117,12 @@
         Jul 17, 2016
     
     
-         Danping Mao
+        by Danping Mao
     
 </div>
         
 <div class="blog-post-tags text-secondary">
-    <strong>:</strong>
+    <strong>Tags:</strong>
     
         <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
     
@@ -129,7 +130,7 @@
 
         
 <div class="blog-post-categories text-secondary">
-    <strong>:</strong>
+    <strong>Categories:</strong>
     
         <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
     
@@ -244,116 +245,106 @@
 <h5 id="迁移任务">迁移任务</h5>
 
 <p>该模块主要负责<code>迁移任务</code>的发起，并将更新的状态写入<code>zookeeper</code>以通知集群中的各个<code>Proxy</code>节点。<code>Codis</code>创建了协程定时从<code>zookeeper</code>中读取迁移任务并执行。执行函数大体如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">//单个slot的迁移
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MigrateTask</span>) <span style="color:#a6e22e">migrateSingleSlot</span>(<span style="color:#a6e22e">slotId</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">to</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">error</span> {
 
-<pre><code class="language-go">//单个slot的迁移
-func (t *MigrateTask) migrateSingleSlot(slotId int, to int) error {
-
-    // .......
-
-    /*
-     * 完成状态转换：
-     * ONLINE -&gt; SLOT_STATUS_PRE_MIGRATE -&gt; SLOT_STATUS_MIGRATE
-     * 状态更新过程中，各个Proxy会收到slot状态变更通知，做相应处理
-     */
-    if err := s.SetMigrateStatus(t.zkConn, from, to); err != nil {
-        log.ErrorErrorf(err, &quot;set migrate status failed&quot;)
-        return err
+    <span style="color:#75715e">// .......
+</span><span style="color:#75715e"></span>
+    <span style="color:#75715e">/*
+</span><span style="color:#75715e">     * 完成状态转换：
+</span><span style="color:#75715e">     * ONLINE -&gt; SLOT_STATUS_PRE_MIGRATE -&gt; SLOT_STATUS_MIGRATE
+</span><span style="color:#75715e">     * 状态更新过程中，各个Proxy会收到slot状态变更通知，做相应处理
+</span><span style="color:#75715e">     */</span>
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">SetMigrateStatus</span>(<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">zkConn</span>, <span style="color:#a6e22e">from</span>, <span style="color:#a6e22e">to</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">ErrorErrorf</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;set migrate status failed&#34;</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
     }
 
-    /*
-     * 执行迁移命令:
-     * 将slot中的key逐个的迁移到新的group中
-     * 在原生Redis中加入了 SLOTSMGRTTAGSLOT 迁移命令
-     */
-    t.Migrate(s, from, to, func(p SlotMigrateProgress) 
+    <span style="color:#75715e">/*
+</span><span style="color:#75715e">     * 执行迁移命令:
+</span><span style="color:#75715e">     * 将slot中的key逐个的迁移到新的group中
+</span><span style="color:#75715e">     * 在原生Redis中加入了 SLOTSMGRTTAGSLOT 迁移命令
+</span><span style="color:#75715e">     */</span>
+    <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Migrate</span>(<span style="color:#a6e22e">s</span>, <span style="color:#a6e22e">from</span>, <span style="color:#a6e22e">to</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">p</span> <span style="color:#a6e22e">SlotMigrateProgress</span>) 
 
-    // 迁移完成，将该slot状态改回 SLOT_STATUS_ONLINE 状态
-    s.State.Status = models.SLOT_STATUS_ONLINE
-    s.State.MigrateStatus.From = models.INVALID_ID
-    s.State.MigrateStatus.To = models.INVALID_ID
+    <span style="color:#75715e">// 迁移完成，将该slot状态改回 SLOT_STATUS_ONLINE 状态
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Status</span> = <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">SLOT_STATUS_ONLINE</span>
+    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">MigrateStatus</span>.<span style="color:#a6e22e">From</span> = <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">INVALID_ID</span>
+    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">MigrateStatus</span>.<span style="color:#a6e22e">To</span> = <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">INVALID_ID</span>
 
-    // 更新slot状态信息
-    if err := s.Update(t.zkConn); err != nil {
-        log.ErrorErrorf(err, &quot;update zk status failed, should be: %+v&quot;, s)
-        return err
+    <span style="color:#75715e">// 更新slot状态信息
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Update</span>(<span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">zkConn</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">ErrorErrorf</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;update zk status failed, should be: %+v&#34;</span>, <span style="color:#a6e22e">s</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
     }
 
-}
-
-</code></pre>
-
+}</code></pre></div>
 <h5 id="proxy处理状态迁移">Proxy处理状态迁移</h5>
 
 <p>状态迁移中，会重新建立slot与groupId, redis-server的连接关系。并且如果状态为<code>pre_migrate</code>， 会阻塞slot的所有操作，直到状态变为<code>migrate</code>。</p>
-
-<pre><code class="language-go">//对于从zookeeper收到的状态变更处理函数
-func (s *Server) checkAndDoTopoChange(seq int) bool {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">//对于从zookeeper收到的状态变更处理函数
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">checkAndDoTopoChange</span>(<span style="color:#a6e22e">seq</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">bool</span> {
    
-    // ........
-
-    switch act.Type {
-    // slot状态变更，获取zookeeper中slot的信息
-    case models.ACTION_TYPE_SLOT_MIGRATE, models.ACTION_TYPE_SLOT_CHANGED,
-        models.ACTION_TYPE_SLOT_PREMIGRATE:
-        slot := &amp;models.Slot{}
-        s.getActionObject(seq, slot)
+    <span style="color:#75715e">// ........
+</span><span style="color:#75715e"></span>
+    <span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">act</span>.<span style="color:#a6e22e">Type</span> {
+    <span style="color:#75715e">// slot状态变更，获取zookeeper中slot的信息
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">ACTION_TYPE_SLOT_MIGRATE</span>, <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">ACTION_TYPE_SLOT_CHANGED</span>,
+        <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">ACTION_TYPE_SLOT_PREMIGRATE</span>:
+        <span style="color:#a6e22e">slot</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Slot</span>{}
+        <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">getActionObject</span>(<span style="color:#a6e22e">seq</span>, <span style="color:#a6e22e">slot</span>)
         
-        s.fillSlot(slot.Id)
+        <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">fillSlot</span>(<span style="color:#a6e22e">slot</span>.<span style="color:#a6e22e">Id</span>)
 
-    // .......
-}
+    <span style="color:#75715e">// .......
+</span><span style="color:#75715e"></span>}
 
-//更新slotId与groupId的映射关系，建立与redis-server的连接
-func (s *Server) fillSlot(i int) {
+<span style="color:#75715e">//更新slotId与groupId的映射关系，建立与redis-server的连接
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">fillSlot</span>(<span style="color:#a6e22e">i</span> <span style="color:#66d9ef">int</span>) {
 
-    // ........
-    /*
-     * 如果slot变更为SLOT_STATUS_MIGRATE，其所属groupId也变更了
-     * 需要获取原先的 groupId
-     */
-    var addr = groupMaster(*slotGroup)
-    if slotInfo.State.Status == models.SLOT_STATUS_MIGRATE {
-        fromGroup, err := s.topo.GetGroup(slotInfo.State.MigrateStatus.From)
-        if err != nil {
-            log.PanicErrorf(err, &quot;get migrate from failed&quot;)
+    <span style="color:#75715e">// ........
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/*
+</span><span style="color:#75715e">     * 如果slot变更为SLOT_STATUS_MIGRATE，其所属groupId也变更了
+</span><span style="color:#75715e">     * 需要获取原先的 groupId
+</span><span style="color:#75715e">     */</span>
+    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">addr</span> = <span style="color:#a6e22e">groupMaster</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">slotGroup</span>)
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">slotInfo</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Status</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">SLOT_STATUS_MIGRATE</span> {
+        <span style="color:#a6e22e">fromGroup</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">topo</span>.<span style="color:#a6e22e">GetGroup</span>(<span style="color:#a6e22e">slotInfo</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">MigrateStatus</span>.<span style="color:#a6e22e">From</span>)
+        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+            <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">PanicErrorf</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;get migrate from failed&#34;</span>)
         }
-        from = groupMaster(*fromGroup)
-        if from == addr {
-            log.Panicf(&quot;set slot %04d migrate from %s to %s&quot;, i, from, addr)
+        <span style="color:#a6e22e">from</span> = <span style="color:#a6e22e">groupMaster</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">fromGroup</span>)
+        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">from</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">addr</span> {
+            <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Panicf</span>(<span style="color:#e6db74">&#34;set slot %04d migrate from %s to %s&#34;</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">from</span>, <span style="color:#a6e22e">addr</span>)
         }
     }
 
-    // 更新slot所属的groupId
-    s.groups[i] = slotInfo.GroupId
-    /*
-     * s.router.FillSlot()函数主要完成与redis-server的连接
-     * 同时判断当前状态，如果处于pre_migrate会阻塞客户端对该slot的所有操作
-     */
-    s.router.FillSlot(i, addr, from,
-        slotInfo.State.Status == models.SLOT_STATUS_PRE_MIGRATE)
-}
-</code></pre>
-
+    <span style="color:#75715e">// 更新slot所属的groupId
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">groups</span>[<span style="color:#a6e22e">i</span>] = <span style="color:#a6e22e">slotInfo</span>.<span style="color:#a6e22e">GroupId</span>
+    <span style="color:#75715e">/*
+</span><span style="color:#75715e">     * s.router.FillSlot()函数主要完成与redis-server的连接
+</span><span style="color:#75715e">     * 同时判断当前状态，如果处于pre_migrate会阻塞客户端对该slot的所有操作
+</span><span style="color:#75715e">     */</span>
+    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">router</span>.<span style="color:#a6e22e">FillSlot</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">addr</span>, <span style="color:#a6e22e">from</span>,
+        <span style="color:#a6e22e">slotInfo</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Status</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">SLOT_STATUS_PRE_MIGRATE</span>)
+}</code></pre></div>
 <h5 id="proxy处理客户端请求">Proxy处理客户端请求</h5>
 
 <p><code>客户端</code>的redis请求会通过<code>Proxy</code>的路由规则，转发给指定的slot处理。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Slot</span>) <span style="color:#a6e22e">forward</span>(<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>, <span style="color:#a6e22e">key</span> []<span style="color:#66d9ef">byte</span>) <span style="color:#66d9ef">error</span> {
+	<span style="color:#75715e">//这里对于pre_migrate状态会阻塞，该slot中key的所有命令将不执行
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">RLock</span>()
+    <span style="color:#75715e">/*
+</span><span style="color:#75715e">     * 执行redis命令前的准备工作:
+</span><span style="color:#75715e">     * 1. 检查slot是否处于迁移状态中
+</span><span style="color:#75715e">     * 2. 强制迁移指定key到新的redis-server
+</span><span style="color:#75715e">     * 3. 检查和后端redis连接是否存在，检查slot是否处于迁移状态中，如果是，强制迁移指定key到新的redis-server
+</span><span style="color:#75715e">     */</span>
+    <span style="color:#a6e22e">bc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">prepare</span>(<span style="color:#a6e22e">r</span>, <span style="color:#a6e22e">key</span>)
 
-<pre><code class="language-go">func (s *Slot) forward(r *Request, key []byte) error {
-	//这里对于pre_migrate状态会阻塞，该slot中key的所有命令将不执行
-    s.lock.RLock()
-    /*
-     * 执行redis命令前的准备工作:
-     * 1. 检查slot是否处于迁移状态中
-     * 2. 强制迁移指定key到新的redis-server
-     * 3. 检查和后端redis连接是否存在，检查slot是否处于迁移状态中，如果是，强制迁移指定key到新的redis-server
-     */
-    bc, err := s.prepare(r, key)
-
-    //将redis命令发向新的redis-server
-    bc.PushBack(r)
-}
-</code></pre>
-
+    <span style="color:#75715e">//将redis命令发向新的redis-server
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">bc</span>.<span style="color:#a6e22e">PushBack</span>(<span style="color:#a6e22e">r</span>)
+}</code></pre></div>
 <p>从示例代码中，我们能够看到，在<code>pre_migrate</code>状态下，该slot的操作是阻塞的。在<code>migrate</code>状态下，对slot的key操作是原子的：首先向旧的<code>groupId</code>所在的<code>redis-server</code>发送<code>SLOTSMGRTTAGONE</code>命令，完成单个<code>key</code>的迁移，然后向新的<code>groupId</code>所在的<code>redis-server</code>进行该<code>key</code>的操作。</p>
 
 <h3 id="参考阅读">参考阅读</h3>
@@ -365,10 +356,9 @@ func (s *Server) fillSlot(i int) {
 <p>大数据日知录:架构与算法 Ch2-数据一致性协议</p>
 
     
-
     
 
-    <h4></h4>
+    <h4>See also</h4>
     <ul>
         
             <li><a href="/2016/07/02/bigdata-cap/">分布式存储之CAP原则</a></li>
@@ -392,8 +382,16 @@ func (s *Server) fillSlot(i int) {
 
 
 <section>
-    <h4></h4>
+    <h4>Recent Posts</h4>
     <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2017/04/10/probability/">机器学习之概率论</a>
+        </li>
+        
+        <li>
+            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
+        </li>
         
         <li>
             <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
@@ -407,14 +405,6 @@ func (s *Server) fillSlot(i int) {
             <a href="/2016/09/04/go/">golang中context包</a>
         </li>
         
-        <li>
-            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
-        </li>
-        
     </ol>
 </section>
 
@@ -425,7 +415,7 @@ func (s *Server) fillSlot(i int) {
         
     
         
-        <h4></h4>
+        <h4>Categories</h4>
         <p>
             
             <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
@@ -440,7 +430,7 @@ func (s *Server) fillSlot(i int) {
         
     
         
-        <h4></h4>
+        <h4>Tags</h4>
         <p>
             
             <a class="badge badge-primary" href="/tags/apache">apache</a>
@@ -450,6 +440,8 @@ func (s *Server) fillSlot(i int) {
             <a class="badge badge-primary" href="/tags/iptables">iptables</a>
             
             <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
             
             <a class="badge badge-primary" href="/tags/network">network</a>
             
@@ -476,6 +468,7 @@ func (s *Server) fillSlot(i int) {
     
 </aside>
 
+
       </div>
     </div>
     
@@ -484,7 +477,7 @@ func (s *Server) fillSlot(i int) {
       <footer class="blog-footer w-100">
     <nav class="navbar navbar-light bg-light">
         <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#"></a></p>
+        <p class="w-100 text-center"><a href="#">Back to top</a></p>
     </nav>
 </footer>
     

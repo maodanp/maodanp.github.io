@@ -3,6 +3,16 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>http://maodanp.github.io/2017/04/10/probability/</loc>
+    <lastmod>2017-04-10T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://maodanp.github.io/2017/04/03/math-analysis/</loc>
+    <lastmod>2017-04-03T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>http://maodanp.github.io/2016/09/16/redis-lock/</loc>
     <lastmod>2016-09-16T00:00:00+00:00</lastmod>
   </url>
@@ -184,7 +194,7 @@
   
   <url>
     <loc>http://maodanp.github.io/</loc>
-    <lastmod>2016-09-16T00:00:00+00:00</lastmod>
+    <lastmod>2017-04-10T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -212,6 +222,12 @@
   </url>
   
   <url>
+    <loc>http://maodanp.github.io/tags/machine-learning/</loc>
+    <lastmod>2017-04-10T00:00:00+00:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
     <loc>http://maodanp.github.io/tags/network/</loc>
     <lastmod>2015-05-20T00:00:00+00:00</lastmod>
     <priority>0</priority>
@@ -225,7 +241,7 @@
   
   <url>
     <loc>http://maodanp.github.io/post/</loc>
-    <lastmod>2016-09-16T00:00:00+00:00</lastmod>
+    <lastmod>2017-04-10T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -278,7 +294,7 @@
   
   <url>
     <loc>http://maodanp.github.io/categories/%E6%8A%80%E6%9C%AF%E5%BF%97/</loc>
-    <lastmod>2016-09-16T00:00:00+00:00</lastmod>
+    <lastmod>2017-04-10T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   

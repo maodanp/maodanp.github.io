@@ -91,6 +91,7 @@
             </ul>
             
         </div>
+	
     </nav>
 </header>
 
@@ -116,12 +117,12 @@
         Aug 13, 2016
     
     
-         Danping Mao
+        by Danping Mao
     
 </div>
         
 <div class="blog-post-tags text-secondary">
-    <strong>:</strong>
+    <strong>Tags:</strong>
     
         <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
     
@@ -129,7 +130,7 @@
 
         
 <div class="blog-post-categories text-secondary">
-    <strong>:</strong>
+    <strong>Categories:</strong>
     
         <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
     
@@ -310,49 +311,46 @@
 </ul>
 
 <p><strong>goraft</strong>中的<strong>AEs RPC</strong>处理过程基本遵循上述处理流程，对应中的主要代码段如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"> <span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">processAppendEntriesRequest</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AppendEntriesRequest</span>){
 
-<pre><code class="language-go"> func (s *server) processAppendEntriesRequest(req *AppendEntriesRequest){
-
-      //如果AppendEntries请求的term小于该server当前term
-      //返回失败
-      if req.Term &lt; s.currentTerm {
-          s.debugln(&quot;server.ae.error: stale term&quot;)
-          return false
+      <span style="color:#75715e">//如果AppendEntries请求的term小于该server当前term
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">//返回失败
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> &lt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span> {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.ae.error: stale term&#34;</span>)
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
       }
 
-      if req.Term == s.currentTerm {
+      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span> {
 
-          // 当server处于candidate状态，则降为follower
-          if s.state == Candidate {
-              s.setState(Follower)
+          <span style="color:#75715e">// 当server处于candidate状态，则降为follower
+</span><span style="color:#75715e"></span>          <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">state</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">Candidate</span> {
+              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">setState</span>(<span style="color:#a6e22e">Follower</span>)
           }
 
-      } else {
+      } <span style="color:#66d9ef">else</span> {
      
-          // term 比 目前的大，则有新的leader产生
-          // 更新 term 以及 leader
-          s.updateCurrentTerm(req.Term, req.LeaderName)
+          <span style="color:#75715e">// term 比 目前的大，则有新的leader产生
+</span><span style="color:#75715e"></span>          <span style="color:#75715e">// 更新 term 以及 leader
+</span><span style="color:#75715e"></span>          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">updateCurrentTerm</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">LeaderName</span>)
       }
 
-      // 将req.PrevLogIndex 编号后的log entry都删除了
-      if err := s.log.truncate(req.PrevLogIndex, req.PrevLogTerm); err != nil {
-          return false
+      <span style="color:#75715e">// 将req.PrevLogIndex 编号后的log entry都删除了
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">truncate</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">PrevLogIndex</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">PrevLogTerm</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
       }
 
-     // 加入该server节点的 log entries
-      if err := s.log.appendEntries(req.Entries); err != nil {
-          return false
+     <span style="color:#75715e">// 加入该server节点的 log entries
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">appendEntries</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Entries</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
       }
 
-      // 提交至req.CommitIndex
-      if err := s.log.setCommitIndex(req.CommitIndex); err != nil {
-          s.debugln(&quot;server.ae.commit.error: &quot;, err)
-          return true
+      <span style="color:#75715e">// 提交至req.CommitIndex
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">setCommitIndex</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">CommitIndex</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.ae.commit.error: &#34;</span>, <span style="color:#a6e22e">err</span>)
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
       }
-      return true;
-  }
-</code></pre>
-
+      <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
+  }</code></pre></div>
 <p><strong>Leader</strong>对于 <strong>AppendEntries RPC Response</strong>的处理流程:</p>
 
 <ul>
@@ -360,43 +358,40 @@
 <li>如果收到大多数节点的<strong>AEs</strong>成功回应，后续会判断下次的提交编号，否则返回</li>
 <li>Leader根据大多数节点返回的上次log的索引编号，来决定这次提交的编号， 该提交编号将在下次随<strong>AEs RPC</strong>传给follower</li>
 </ul>
-
-<pre><code class="language-go">func (s *server) processAppendEntriesResponse(resp *AppendEntriesResponse) {
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">processAppendEntriesResponse</span>(<span style="color:#a6e22e">resp</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AppendEntriesResponse</span>) {
  
-      // 如果发现AppendEntries的返回中term较大，则角色变为follower
-      // 这个判断非常重要，能够保证网络分区恢复后的一致性
-      if resp.Term() &gt; s.Term() {
-          s.updateCurrentTerm(resp.Term(), &quot;&quot;)
-          return
+      <span style="color:#75715e">// 如果发现AppendEntries的返回中term较大，则角色变为follower
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 这个判断非常重要，能够保证网络分区恢复后的一致性
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Term</span>() &gt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Term</span>() {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">updateCurrentTerm</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Term</span>(), <span style="color:#e6db74">&#34;&#34;</span>)
+          <span style="color:#66d9ef">return</span>
       }
 
-      // 对于回应返回成功的，更新map表
-      if resp.append == true {
-          s.syncedPeer[resp.peer] = true
+      <span style="color:#75715e">// 对于回应返回成功的，更新map表
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">append</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">true</span> {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">syncedPeer</span>[<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">peer</span>] = <span style="color:#66d9ef">true</span>
       }
 
-      if len(s.syncedPeer) &lt; s.QuorumSize() {
-          return
+      <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">syncedPeer</span>) &lt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">QuorumSize</span>() {
+          <span style="color:#66d9ef">return</span>
       }
 
-      // 计算此次需要提交的编号
-      var indices []uint64
-      indices = append(indices, s.log.currentIndex())
-      for _, peer := range s.peers {
-          indices = append(indices, peer.getPrevLogIndex())
+      <span style="color:#75715e">// 计算此次需要提交的编号
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">indices</span> []<span style="color:#66d9ef">uint64</span>
+      <span style="color:#a6e22e">indices</span> = append(<span style="color:#a6e22e">indices</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">currentIndex</span>())
+      <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">peer</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">peers</span> {
+          <span style="color:#a6e22e">indices</span> = append(<span style="color:#a6e22e">indices</span>, <span style="color:#a6e22e">peer</span>.<span style="color:#a6e22e">getPrevLogIndex</span>())
       }
-      sort.Sort(sort.Reverse(uint64Slice(indices)))
+      <span style="color:#a6e22e">sort</span>.<span style="color:#a6e22e">Sort</span>(<span style="color:#a6e22e">sort</span>.<span style="color:#a6e22e">Reverse</span>(<span style="color:#a6e22e">uint64Slice</span>(<span style="color:#a6e22e">indices</span>)))
 
-      commitIndex := indices[s.QuorumSize()-1]
-      committedIndex := s.log.commitIndex
+      <span style="color:#a6e22e">commitIndex</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">indices</span>[<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">QuorumSize</span>()<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+      <span style="color:#a6e22e">committedIndex</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">commitIndex</span>
 
-      if commitIndex &gt; committedIndex {
-          s.log.sync()
-          s.log.setCommitIndex(commitIndex)
+      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">commitIndex</span> &gt; <span style="color:#a6e22e">committedIndex</span> {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">sync</span>()
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">setCommitIndex</span>(<span style="color:#a6e22e">commitIndex</span>)
       }
-  }
-</code></pre>
-
+  }</code></pre></div>
 <h4 id="requestvote-rpc">RequestVote RPC</h4>
 
 <p>以下为<strong>RequestVote RPC</strong>的格式和说明:</p>
@@ -411,87 +406,78 @@
 </ul>
 
 <p><strong>goraft</strong>中的<strong>RequestVote RPC</strong>处理过程主要代码段如下：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">processRequestVoteRequest</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">RequestVoteRequest</span>){
 
-<pre><code class="language-go">
-func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
-
-      // term小于当前的，则返回false
-      if req.Term &lt; s.Term() {
-          s.debugln(&quot;server.rv.deny.vote: cause stale term&quot;)
-		  return false
+      <span style="color:#75715e">// term小于当前的，则返回false
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> &lt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Term</span>() {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.rv.deny.vote: cause stale term&#34;</span>)
+		  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
       }
 
-      // 如果请求的term大于该节点的term，则更新该节点的term
-      // 如果term相等，且我们已经投给了其他候选节点(votedFor参数),则不投给该候选节点candidate
-      // 即一个任期内只投给一个候选节点，但是可以投多次（可能存在网络异常，候选节点再次发出投票请求）
-      if req.Term &gt; s.Term() {
-          s.updateCurrentTerm(req.Term, &quot;&quot;)
-      } else if s.votedFor != &quot;&quot; &amp;&amp; s.votedFor != req.CandidateName {
-          return false
+      <span style="color:#75715e">// 如果请求的term大于该节点的term，则更新该节点的term
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 如果term相等，且我们已经投给了其他候选节点(votedFor参数),则不投给该候选节点candidate
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 即一个任期内只投给一个候选节点，但是可以投多次（可能存在网络异常，候选节点再次发出投票请求）
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> &gt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Term</span>() {
+          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">updateCurrentTerm</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span>, <span style="color:#e6db74">&#34;&#34;</span>)
+      } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">CandidateName</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
       }
 
-      // 如果candidate中最新日志项编号小于 当前server的最新日志项编号，则不投票
-      // 这里满足了Raft的安全性：必须要比大部分其它候选者的log新，才有机会成为leader
-      lastIndex, lastTerm := s.log.lastInfo()
-      if lastIndex &gt; req.LastLogIndex || lastTerm &gt; req.LastLogTerm {
-          return false
+      <span style="color:#75715e">// 如果candidate中最新日志项编号小于 当前server的最新日志项编号，则不投票
+</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 这里满足了Raft的安全性：必须要比大部分其它候选者的log新，才有机会成为leader
+</span><span style="color:#75715e"></span>      <span style="color:#a6e22e">lastIndex</span>, <span style="color:#a6e22e">lastTerm</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">lastInfo</span>()
+      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">lastIndex</span> &gt; <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">LastLogIndex</span> <span style="color:#f92672">||</span> <span style="color:#a6e22e">lastTerm</span> &gt; <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">LastLogTerm</span> {
+          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
       }
 
-      s.votedFor = req.CandidateName
+      <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> = <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">CandidateName</span>
 
-      return true
-  }
-
-</code></pre>
-
+      <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
+  }</code></pre></div>
 <p><strong>Candidate</strong>对于<strong>RequestVote RPC Response</strong>的处理流程:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"> <span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">candidateLoop</span>() {
+	  <span style="color:#75715e">//处于 Candidate 状态，直到状态改变为leader或者follower
+</span><span style="color:#75715e"></span>	  <span style="color:#75715e">//否则超时后再次发起投票请求     
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">State</span>() <span style="color:#f92672">==</span> <span style="color:#a6e22e">Candidate</span> {
 
-<pre><code class="language-go">
- func (s *server) candidateLoop() {
-	  //处于 Candidate 状态，直到状态改变为leader或者follower
-	  //否则超时后再次发起投票请求     
-      for s.State() == Candidate {
+          <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">doVote</span> {
+              <span style="color:#75715e">//自增term
+</span><span style="color:#75715e"></span>              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span><span style="color:#f92672">++</span>
+              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> = <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">name</span>
 
-          if doVote {
-              //自增term
-              s.currentTerm++
-              s.votedFor = s.name
-
-              // 向每个servers发送 RequestVote RPCs
-              respChan = make(chan *RequestVoteResponse, len(s.peers))
-              for _, peer := range s.peers {
-                  s.routineGroup.Add(1)
-                  go func(peer *Peer) {
-                      defer s.routineGroup.Done()
-                      peer.sendVoteRequest(newRequestVoteRequest(s.currentTerm, s.name, lastLogIndex, lastLogTerm), respChan)
-                  }(peer)
+              <span style="color:#75715e">// 向每个servers发送 RequestVote RPCs
+</span><span style="color:#75715e"></span>              <span style="color:#a6e22e">respChan</span> = make(<span style="color:#66d9ef">chan</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">RequestVoteResponse</span>, len(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">peers</span>))
+              <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">peer</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">peers</span> {
+                  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">routineGroup</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">1</span>)
+                  <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">peer</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Peer</span>) {
+                      <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">routineGroup</span>.<span style="color:#a6e22e">Done</span>()
+                      <span style="color:#a6e22e">peer</span>.<span style="color:#a6e22e">sendVoteRequest</span>(<span style="color:#a6e22e">newRequestVoteRequest</span>(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">lastLogIndex</span>, <span style="color:#a6e22e">lastLogTerm</span>), <span style="color:#a6e22e">respChan</span>)
+                  }(<span style="color:#a6e22e">peer</span>)
               }
 
-              //发起请求后的变量初始化
-              votesGranted = 1
-              timeoutChan = afterBetween(s.ElectionTimeout(), s.ElectionTimeout()*2)
-              doVote = false
+              <span style="color:#75715e">//发起请求后的变量初始化
+</span><span style="color:#75715e"></span>              <span style="color:#a6e22e">votesGranted</span> = <span style="color:#ae81ff">1</span>
+              <span style="color:#a6e22e">timeoutChan</span> = <span style="color:#a6e22e">afterBetween</span>(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">ElectionTimeout</span>(), <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">ElectionTimeout</span>()<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>)
+              <span style="color:#a6e22e">doVote</span> = <span style="color:#66d9ef">false</span>
            }
 
-           //如果收到超过半数以上的投票支持，则状态变为leader
-           if votesGranted == s.QuorumSize() {
-              s.setState(Leader)
-              return
+           <span style="color:#75715e">//如果收到超过半数以上的投票支持，则状态变为leader
+</span><span style="color:#75715e"></span>           <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">votesGranted</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">QuorumSize</span>() {
+              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">setState</span>(<span style="color:#a6e22e">Leader</span>)
+              <span style="color:#66d9ef">return</span>
            }
 
-          select {
-          //处理收到RequestVote RPC回应
-          case resp := &lt;-respChan:
-              if success := s.processVoteResponse(resp); success {
-                  s.debugln(&quot;server.candidate.vote.granted: &quot;, votesGranted)
-                  votesGranted++
+          <span style="color:#66d9ef">select</span> {
+          <span style="color:#75715e">//处理收到RequestVote RPC回应
+</span><span style="color:#75715e"></span>          <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">respChan</span>:
+              <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">success</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">processVoteResponse</span>(<span style="color:#a6e22e">resp</span>); <span style="color:#a6e22e">success</span> {
+                  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.candidate.vote.granted: &#34;</span>, <span style="color:#a6e22e">votesGranted</span>)
+                  <span style="color:#a6e22e">votesGranted</span><span style="color:#f92672">++</span>
               }
-          //如果选举超时，则继续选举    	
-          case &lt;-timeoutChan:
-              doVote = true
-       }
-</code></pre>
-
+          <span style="color:#75715e">//如果选举超时，则继续选举    	
+</span><span style="color:#75715e"></span>          <span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">timeoutChan</span>:
+              <span style="color:#a6e22e">doVote</span> = <span style="color:#66d9ef">true</span>
+       }</code></pre></div>
 <h3 id="raft的failure处理">Raft的failure处理</h3>
 
 <p>Raft关于容错的处理是需要考虑的方面。主要的异常包括<strong>Leader crash</strong>、<strong>Follower crash</strong>、<strong>Network Partition</strong>等。</p>
@@ -559,10 +545,9 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
 <p><a href="http://www.tuicool.com/articles/aERnm2U">从raft看failure的处理</a></p>
 
     
-
     
 
-    <h4></h4>
+    <h4>See also</h4>
     <ul>
         
             <li><a href="/2016/08/05/bigdata-raft/">分布式存储之Raft协议</a></li>
@@ -590,8 +575,16 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
 
 
 <section>
-    <h4></h4>
+    <h4>Recent Posts</h4>
     <ol class="list-unstyled">
+        
+        <li>
+            <a href="/2017/04/10/probability/">机器学习之概率论</a>
+        </li>
+        
+        <li>
+            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
+        </li>
         
         <li>
             <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
@@ -605,14 +598,6 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
             <a href="/2016/09/04/go/">golang中context包</a>
         </li>
         
-        <li>
-            <a href="/2016/09/04/linux-performace-cmd-two/">liunx性能检测常用命令(二)</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/03/linux-performace-cmd-one/">liunx性能检测常用命令(一)</a>
-        </li>
-        
     </ol>
 </section>
 
@@ -623,7 +608,7 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
         
     
         
-        <h4></h4>
+        <h4>Categories</h4>
         <p>
             
             <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
@@ -638,7 +623,7 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
         
     
         
-        <h4></h4>
+        <h4>Tags</h4>
         <p>
             
             <a class="badge badge-primary" href="/tags/apache">apache</a>
@@ -648,6 +633,8 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
             <a class="badge badge-primary" href="/tags/iptables">iptables</a>
             
             <a class="badge badge-primary" href="/tags/linux">linux</a>
+            
+            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
             
             <a class="badge badge-primary" href="/tags/network">network</a>
             
@@ -674,6 +661,7 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
     
 </aside>
 
+
       </div>
     </div>
     
@@ -682,7 +670,7 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
       <footer class="blog-footer w-100">
     <nav class="navbar navbar-light bg-light">
         <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#"></a></p>
+        <p class="w-100 text-center"><a href="#">Back to top</a></p>
     </nav>
 </footer>
     
