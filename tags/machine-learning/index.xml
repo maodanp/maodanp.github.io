@@ -6,10 +6,21 @@
     <description>Recent content in Machine Learning on Danping&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 20 May 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 26 May 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="http://maodanp.github.io/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>机器学习之Logistic回归</title>
+      <link>http://maodanp.github.io/2017/05/26/logistic-regression/</link>
+      <pubDate>Fri, 26 May 2017 00:00:00 +0000</pubDate>
+      
+      <guid>http://maodanp.github.io/2017/05/26/logistic-regression/</guid>
+      <description>&lt;p&gt;分类是监督学习中的一个重要问题，当输出变量Y取有限个离散值时，预测问题便成为分类问题。此时的X可以是离散的或者连续的。&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>机器学习之线性回归</title>
