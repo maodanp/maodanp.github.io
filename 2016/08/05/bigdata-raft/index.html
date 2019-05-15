@@ -106,7 +106,7 @@
 
 <p>三者的转换关系及转换条件如下所示：</p>
 
-<p><img src="./pic/2016/2016-08-05-bigdata-raft-1.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-05-bigdata-raft-1.png" alt="" /></p>
 
 <h4 id="term">Term</h4>
 
@@ -121,7 +121,7 @@
 
 <p>可以说每次Term的递增都将发生新一轮的选举，Raft保证一个Term只有一个Leader，在Raft正常运转中所有的节点的Term都是一致的，如果节点不发生故障一个Term（任期）会一直保持下去，当某节点收到的请求中Term比当前Term小时则拒绝该请求。</p>
 
-<p><img src="./pic/2016/2016-08-05-bigdata-raft-2.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-05-bigdata-raft-2.png" alt="" /></p>
 
 <h4 id="选举">选举</h4>
 
@@ -154,7 +154,7 @@
 <li>并在下个<strong>heartbeat</strong>中<strong>Leader</strong>将通知所有的<strong>Follower</strong>将该日志存储在自己的本地磁盘中;</li>
 </ul>
 
-<p><img src="./pic/2016/2016-08-05-bigdata-raft-3.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-05-bigdata-raft-3.png" alt="" /></p>
 
 <p>上图展示了每个<strong>Logs</strong>的组织结构。这些<strong>log entry</strong>都是从<strong>Leader</strong>中获取，其中每个<strong>log entry</strong>存储了一个<strong>状态机命令</strong>和任期号，且每个<strong>log entry</strong>包含整型的索引来确定在log中的位置。</p>
 

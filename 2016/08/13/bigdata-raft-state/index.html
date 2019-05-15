@@ -77,7 +77,7 @@
 
 <p>下图为每个Raft节点保存的一些状态信息：</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-1.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-1.png" alt="" /></p>
 
 <p>大致解释为：</p>
 
@@ -229,7 +229,7 @@
 
 <p>以下为<strong>AppendEntries RPC</strong>的格式和说明:</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-2.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-2.png" alt="" /></p>
 
 <p>从以上<strong>AEs(AppendEntries RPC)</strong>的请求、响应格式说明可以看到，Raft对于实现细节有非常清晰的界定与描述。对于RPC接受者的实现主要有以下几种情况：</p>
 
@@ -333,7 +333,7 @@
 
 <p>以下为<strong>RequestVote RPC</strong>的格式和说明:</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-3.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-3.png" alt="" /></p>
 
 <p>对于<strong>RequestVote RPC</strong>接受者的处理流程：</p>
 
@@ -444,7 +444,7 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
 
 <p>下图为情况(2)中(a)的情形，即大多数节点都<strong>AppendEntries</strong>了，根据Raft安全性原则，后续的<strong>Leader</strong>在*F_1*或者<em>F_2</em> 中产生，那么 “Hello”命令也间接被提交了。</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-4.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-4.png" alt="" /></p>
 
 <p>对于情况(3)，类似于情况(2)中的(a)。</p>
 
@@ -454,7 +454,7 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
 
 <p><strong>Follower crash</strong>比较简单，主要是<strong>crash</strong>恢复后怎么保持log与<strong>Leader</strong>的一致性。具体如图示，*F_4*恢复后，怎么保持数据一致？</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-5.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-5.png" alt="" /></p>
 
 <p>在之前<strong>节点状态数据</strong>中我们看到，每个<strong>节点</strong>中会维护一个<strong>Peer[]</strong>, 存放集群中的节点信息。其中就有一个<strong>prevLogIndex</strong>，用于维护上一次该<strong>Follower</strong>最新添加的log的索引号。如果 <em>F_4</em> 恢复了，<strong>Leader</strong>中维护的<strong>prevLogIndex=1</strong>，后续将从索引2开始的所有<strong>log entries</strong>发送给 <em>F_4</em> 。</p>
 
@@ -466,17 +466,17 @@ func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
 
 <p>下图为网络分区的一种情形，其中<em>le_1</em> 为原来的<strong>Leader</strong>， *le_2*为分区二新选举出的<strong>Leader</strong>（<strong>term</strong>比分区一的大)。</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-6.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-6.png" alt="" /></p>
 
 <p>对于图中的<strong>分区一</strong>，由于通信的节点不满足大多数节点（这里假设没有机制去变化整个集群总共的节点数量），所以向该分区中添加的日志都不能提交，客户端将一直收到超时的回复。而对于<strong>分区二</strong>，满足提交的条件，该分区中的日志都能够被正常提交。</p>
 
 <p>待分区恢复，*le_1*由于term小于*le_2*，则自动转为Follower状态，如下图所示，最终能够实现一致性。</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-7.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-7.png" alt="" /></p>
 
 <p>下图为网络分区的另一种情形，<em>le_1</em> 分区占有了大部分节点，能够正常的提交日志。但是<strong>分区二</strong>中的两个<strong>Follower</strong>节点，由于选票个数未过半，将持续处于<strong>Candidate</strong>状态，直到网络恢复。</p>
 
-<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-8.png" alt="" /></p>
+<p><img src="../../../../pic/2016/2016-08-13-bigdata-raft-state-8.png" alt="" /></p>
 
 <p>由于<strong>分区二</strong>的竞选，导致term不停增加，网络分区恢复后，集群中的term号会随着<strong>leader</strong>的<strong>AppendEntries RPC</strong>（参见<strong>processAppendEntriesResponse</strong>函数），将term一起同步到最新。</p>
 
