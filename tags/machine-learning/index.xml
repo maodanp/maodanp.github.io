@@ -1,57 +1,51 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Machine Learning on Danping&#39;s Blog</title>
-    <link>http://maodanp.github.io/tags/machine-learning/</link>
-    <description>Recent content in Machine Learning on Danping&#39;s Blog</description>
+    <title>machine learning on Danping&#39;s blog</title>
+    <link>https://maodanp.github.io/tags/machine-learning/</link>
+    <description>Recent content in machine learning on Danping&#39;s blog</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
+    <language>zh-CN</language>
+    <copyright>Copyright (c) 2018. All rights reserved.</copyright>
     <lastBuildDate>Fri, 26 May 2017 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="http://maodanp.github.io/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://maodanp.github.io/tags/machine-learning/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>机器学习之Logistic回归</title>
-      <link>http://maodanp.github.io/2017/05/26/logistic-regression/</link>
+      <link>https://maodanp.github.io/2017/05/26/logistic-regression/</link>
       <pubDate>Fri, 26 May 2017 00:00:00 +0000</pubDate>
       
-      <guid>http://maodanp.github.io/2017/05/26/logistic-regression/</guid>
-      <description>&lt;p&gt;分类是监督学习中的一个重要问题，当输出变量Y取有限个离散值时，预测问题便成为分类问题。此时的X可以是离散的或者连续的。&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+      <guid>https://maodanp.github.io/2017/05/26/logistic-regression/</guid>
+      <description>&lt;p&gt;分类是监督学习中的一个重要问题，当输出变量Y取有限个离散值时，预测问题便成为分类问题。此时的X可以是离散的或者连续的。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>机器学习之线性回归</title>
-      <link>http://maodanp.github.io/2017/05/20/linear-regression/</link>
+      <link>https://maodanp.github.io/2017/05/20/linear-regression/</link>
       <pubDate>Sat, 20 May 2017 00:00:00 +0000</pubDate>
       
-      <guid>http://maodanp.github.io/2017/05/20/linear-regression/</guid>
-      <description>&lt;p&gt;回归是监督学习中的一个重要问题，用于预测输入变量（自变量）和输出变量（因变量）之间的关系，回归模型正是表示从输入变量到输出变量之间映射的函数。&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+      <guid>https://maodanp.github.io/2017/05/20/linear-regression/</guid>
+      <description>&lt;p&gt;回归是监督学习中的一个重要问题，用于预测输入变量（自变量）和输出变量（因变量）之间的关系，回归模型正是表示从输入变量到输出变量之间映射的函数。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>机器学习之概率论</title>
-      <link>http://maodanp.github.io/2017/04/10/probability/</link>
+      <link>https://maodanp.github.io/2017/04/10/probability/</link>
       <pubDate>Mon, 10 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>http://maodanp.github.io/2017/04/10/probability/</guid>
-      <description>&lt;p&gt;本篇介绍概率统计相关知识，后续机器学习中朴素贝叶斯算法用到了其中贝叶斯的原理，在文本处理方便也有着广泛的应用。
-&lt;/p&gt;</description>
+      <guid>https://maodanp.github.io/2017/04/10/probability/</guid>
+      <description>&lt;p&gt;本篇介绍概率统计相关知识，后续机器学习中朴素贝叶斯算法用到了其中贝叶斯的原理，在文本处理方便也有着广泛的应用。&lt;/p&gt;</description>
     </item>
     
     <item>
       <title>机器学习之数学分析</title>
-      <link>http://maodanp.github.io/2017/04/03/math-analysis/</link>
+      <link>https://maodanp.github.io/2017/04/03/math-analysis/</link>
       <pubDate>Mon, 03 Apr 2017 00:00:00 +0000</pubDate>
       
-      <guid>http://maodanp.github.io/2017/04/03/math-analysis/</guid>
-      <description>&lt;p&gt;本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。&lt;/p&gt;
-
-&lt;p&gt;&lt;/p&gt;</description>
+      <guid>https://maodanp.github.io/2017/04/03/math-analysis/</guid>
+      <description>&lt;p&gt;本篇为机器学习中涉及的数学分析的概念，也是机器学习的基础。&lt;/p&gt;</description>
     </item>
     
   </channel>

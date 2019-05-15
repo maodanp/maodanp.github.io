@@ -1,145 +1,77 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!DOCTYPE html>
 
-<meta property="og:title" content="Linux防火墙" />
-<meta property="og:description" content="在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。
-" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="http://maodanp.github.io/2015/07/07/linux-iptables/" />
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="Linux防火墙 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
 
-
-
-<meta property="article:published_time" content="2015-07-07T00:00:00&#43;00:00"/>
-
-<meta property="article:modified_time" content="2015-07-07T00:00:00&#43;00:00"/>
-
-
-
-
-
-
-
-
-
-
-
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Linux防火墙"/>
-<meta name="twitter:description" content="在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。
-"/>
-
-
-    <link rel="canonical" href="http://maodanp.github.io/2015/07/07/linux-iptables/">
-
-    <title>
-      
-        Linux防火墙 | Danping&#39;s Blog
-      
-    </title>
-
+<title>
     
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
-
+    Linux防火墙
     
+</title>
 
-    
-
-    
-  </head>
-  <body>
-    
-      <header class="blog-header">
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
-        <a class="navbar-brand" href="/">
-            Danping&#39;s Blog
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-            aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-            <ul class="navbar-nav">
-                
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/">主页</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/about/">关于</a>
-                </li>
-                
-            </ul>
-            
-        </div>
-	
-    </nav>
-</header>
-
-    
-
-    
-    <div class="container">
-      <div class="row">
-        <div class="col-12 col-lg-8 blog-main">
-
-          
-
-<article class="blog-post">
-    <header>
-        <h2 class="blog-post-title">
-            <a class="text-dark" href="/2015/07/07/linux-iptables/">Linux防火墙</a>
-        </h2>
-        
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
 
 
-<div class="blog-post-date text-secondary">
-    
-        Jul 7, 2015
-    
-    
-        by Danping Mao
-    
-</div>
-        
-<div class="blog-post-tags text-secondary">
-    <strong>Tags:</strong>
-    
-        <a class="badge badge-primary" href="/tags/linux">linux</a>
-    
-        <a class="badge badge-primary" href="/tags/iptables">iptables</a>
-    
-</div>
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
 
-        
-<div class="blog-post-categories text-secondary">
-    <strong>Categories:</strong>
-    
-        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-    
-</div>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
 
+                </div>
+            </div>
+        </nav>
     </header>
-    <hr>
-    <p>在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。
-</p>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2015年07月07日 
+                </div>
+                <h1 class="post-title">Linux防火墙</h1>
+            </header>
+
+            <div class="post-content">
+                <p>在工作中常常涉及到防火墙的概念，基本网络不通或者服务无法连接首先就会想到是否是防火墙的原因。当然这里所说的防火墙是Linux系统内核继承的IP信息包过滤系统Netfiter/iptables。</p>
 
 <h3 id="snat-dnat-masquerade">SNAT、DNAT、MASQUERADE</h3>
 
@@ -176,7 +108,7 @@
 
 <p>数据在网络协议栈中的基本流程如下：</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-07-07-linux-iptables-1.png" alt="" /></p>
+<p><img src="./pic/2015/2015-07-07-linux-iptables-1.png" alt="" /></p>
 
 <p>对于收到的每个数据包，都从“A”点进来，经过路由判决，如果是发送给本机的就经过“B”点，然后往协议栈的上层继续传递；否则，如果该数据包的目的地是不本机，那么就经过“C”点，然后顺着“E”点将该包转发出去。</p>
 
@@ -184,13 +116,13 @@
 
 <p>Netfilter是Linux 2.4.x引入的一个子系统，它作为一个通用的、抽象的框架，提供一整套的hook函数的管理机制，使得诸如数据包过滤、网络地址转换(NAT)和基于协议类型的连接跟踪成为了可能。Netfilter在内核中位置如下图所示：</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-07-07-linux-iptables-2.png" alt="" /></p>
+<p><img src="./pic/2015/2015-07-07-linux-iptables-2.png" alt="" /></p>
 
 <p>上图很直观的反应了用户空间的iptables和内核空间的基于Netfilter的iptables模块之间的关系和其通讯方式，以及Netfilter在这其中所扮演的角色。</p>
 
 <p>Netfilter在netfilter_ipv4.h中将这个五个点重新命了个名，如下图所示:</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2015/2015-07-07-linux-iptables-3.png" alt="" /></p>
+<p><img src="./pic/2015/2015-07-07-linux-iptables-3.png" alt="" /></p>
 
 <p>即对于数据包而言的几个流向分别为：</p>
 
@@ -214,133 +146,165 @@
 <p><a href="http://www.cnblogs.com/JemBai/archive/2009/03/19/1416364.html">linux下IPTABLES配置详解</a></p>
 
 <p>《构建高可用Linux服务器》 Ch8 Linx防火墙及系统安全</p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2015/07/07/linux-iptables/">https://maodanp.github.io/2015/07/07/linux-iptables/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
 
-    
-    
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/linux/">
+                            <i class="fa fa-tags"></i>
+                            linux
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/iptables/">
+                            <i class="fa fa-tags"></i>
+                            iptables
+                        </a>
+                    </li>
+                    
+                </ul>
 
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
 
-</article>
+                        
+                        <li class="previous"><a href="/2016/03/01/understanding-slices-in-go-programming/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
 
+                        <li><a href="/post/">All Posts</a></li>
 
+                        
+                        <li class="next"><a href="/2015/06/18/distrubuted-server/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
 
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        
+<aside>
+        <div class="toc panel panel-default hidden-xs hidden-sm affix-top" data-spy="affix" data-offset-top="125" data-offset-bottom="300">
+            <div class="panel-heading">
+                <h2 class="panel-title">Catalog</h2>
+            </div>
+
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#snat-dnat-masquerade">SNAT、DNAT、MASQUERADE</a></li>
+<li><a href="#linux防火墙的应用">Linux防火墙的应用</a></li>
+<li><a href="#netfilter-与-iptables">Netfilter 与 iptables</a></li>
+<li><a href="#网络数据的流向">网络数据的流向</a></li>
+<li><a href="#参考阅读">参考阅读</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
         </div>
-
-        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
-    
-        
-
-
-<section>
-    <h4>Recent Posts</h4>
-    <ol class="list-unstyled">
-        
-        <li>
-            <a href="/2017/05/26/logistic-regression/">机器学习之Logistic回归</a>
-        </li>
-        
-        <li>
-            <a href="/2017/05/20/linear-regression/">机器学习之线性回归</a>
-        </li>
-        
-        <li>
-            <a href="/2017/04/10/probability/">机器学习之概率论</a>
-        </li>
-        
-        <li>
-            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
-        </li>
-        
-    </ol>
-</section>
-
-    
-    
-        <section>
-    
-        
-    
-        
-        <h4>Categories</h4>
-        <p>
-            
-            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
-            
-            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-            
-            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
-            
-        </p>
-        
-    
-        
-    
-        
-        <h4>Tags</h4>
-        <p>
-            
-            <a class="badge badge-primary" href="/tags/apache">apache</a>
-            
-            <a class="badge badge-primary" href="/tags/golang">golang</a>
-            
-            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
-            
-            <a class="badge badge-primary" href="/tags/linux">linux</a>
-            
-            <a class="badge badge-primary" href="/tags/logistic%E5%9B%9E%E5%BD%92">logistic回归</a>
-            
-            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
-            
-            <a class="badge badge-primary" href="/tags/network">network</a>
-            
-            <a class="badge badge-primary" href="/tags/php">php</a>
-            
-            <a class="badge badge-primary" href="/tags/redis">redis</a>
-            
-            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96">正则化</a>
-            
-            <a class="badge badge-primary" href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92">线性回归</a>
-            
-        </p>
-        
-    
-</section>
-    
 </aside>
 
-
-      </div>
     </div>
-    
+</div>
 
-    
-      <footer class="blog-footer w-100">
-    <nav class="navbar navbar-light bg-light">
-        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#">Back to top</a></p>
-    </nav>
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2016  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
 </footer>
-    
 
-    
-    
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
 </html>
+

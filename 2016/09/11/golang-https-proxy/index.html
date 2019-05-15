@@ -1,148 +1,77 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!DOCTYPE html>
 
-<meta property="og:title" content="创建基于proxy的HTTP(s)连接" />
-<meta property="og:description" content="最近遇到了几次HTTP(s)如何通过代理访问内网的问题，本篇讲述基于proxy发送/接收HTTP(s)请求的客户端实现方法。
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="最近遇到了几次HTTP(s)如何通过代理访问内网的问题，本篇讲述基于proxy发送/接收HTTP(s)请求的客户端实现方法。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="创建基于proxy的HTTP(s)连接 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
 
-" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="http://maodanp.github.io/2016/09/11/golang-https-proxy/" />
-
-
-
-<meta property="article:published_time" content="2016-09-11T00:00:00&#43;00:00"/>
-
-<meta property="article:modified_time" content="2016-09-11T00:00:00&#43;00:00"/>
-
-
-
-
-
-
-
-
-
-
-
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="创建基于proxy的HTTP(s)连接"/>
-<meta name="twitter:description" content="最近遇到了几次HTTP(s)如何通过代理访问内网的问题，本篇讲述基于proxy发送/接收HTTP(s)请求的客户端实现方法。
-
-"/>
-
-
-    <link rel="canonical" href="http://maodanp.github.io/2016/09/11/golang-https-proxy/">
-
-    <title>
-      
-        创建基于proxy的HTTP(s)连接 | Danping&#39;s Blog
-      
-    </title>
-
+<title>
     
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
-
+    创建基于proxy的HTTP(s)连接
     
+</title>
 
-    
-
-    
-  </head>
-  <body>
-    
-      <header class="blog-header">
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
-        <a class="navbar-brand" href="/">
-            Danping&#39;s Blog
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-            aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-            <ul class="navbar-nav">
-                
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/">主页</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/about/">关于</a>
-                </li>
-                
-            </ul>
-            
-        </div>
-	
-    </nav>
-</header>
-
-    
-
-    
-    <div class="container">
-      <div class="row">
-        <div class="col-12 col-lg-8 blog-main">
-
-          
-
-<article class="blog-post">
-    <header>
-        <h2 class="blog-post-title">
-            <a class="text-dark" href="/2016/09/11/golang-https-proxy/">创建基于proxy的HTTP(s)连接</a>
-        </h2>
-        
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
 
 
-<div class="blog-post-date text-secondary">
-    
-        Sep 11, 2016
-    
-    
-        by Danping Mao
-    
-</div>
-        
-<div class="blog-post-tags text-secondary">
-    <strong>Tags:</strong>
-    
-        <a class="badge badge-primary" href="/tags/golang">golang</a>
-    
-        <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
-    
-</div>
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
 
-        
-<div class="blog-post-categories text-secondary">
-    <strong>Categories:</strong>
-    
-        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-    
-</div>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
 
+                </div>
+            </div>
+        </nav>
     </header>
-    <hr>
-    <p>最近遇到了几次HTTP(s)如何通过代理访问内网的问题，本篇讲述基于proxy发送/接收HTTP(s)请求的客户端实现方法。</p>
 
-<p></p>
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2016年09月11日 
+                </div>
+                <h1 class="post-title">创建基于proxy的HTTP(s)连接</h1>
+            </header>
+
+            <div class="post-content">
+                <p>最近遇到了几次HTTP(s)如何通过代理访问内网的问题，本篇讲述基于proxy发送/接收HTTP(s)请求的客户端实现方法。</p>
 
 <p>开发者可能比较熟悉如何编写<code>http/https</code>的网络编程(包含客户端/服务端)。在<code>net/http</code>的标准库中也有相关很多示例。但是如何基于<code>proxy</code>创建HTTP(s)的连接，这个并不一定熟悉。</p>
 
@@ -158,17 +87,23 @@
 <h4 id="基本方法">基本方法</h4>
 
 <p>以下为客户端的常用方法：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>)
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Post</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">bodyType</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">body</span> <span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Reader</span>) (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>)
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">PostForm</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">data</span> <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Values</span>) (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) <span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Head</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>)
-<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Do</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) (<span style="color:#a6e22e">resp</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Response</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>)</code></pre></div>
+
+<pre><code class="language-go">func (c *Client) Get(url string) (r *Response, err error)
+func (c *Client) Post(url string, bodyType string, body io.Reader) (r *Response, err error)
+func (c *Client) PostForm(url string, data url.Values) (r *Response, err error) func (c *Client) Head(url string) (r *Response, err error)
+func (c *Client) Do(req *Request) (resp *Response, err error)
+</code></pre>
+
 <p>通常前三个基本能够满足条件，如果我们发起的HTTP请求需要更多的定制信息(增加HTTP头信息，传递Cookie等)，可以使用<code>Client.Do()</code>方法来实现：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#e6db74">&#34;GET&#34;</span>, <span style="color:#e6db74">&#34;http://example.com&#34;</span>, <span style="color:#66d9ef">nil</span>) <span style="color:#75715e">// ...
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#e6db74">&#34;User-Agent&#34;</span>, <span style="color:#e6db74">&#34;Gobook Custom User-Agent&#34;</span>)
-<span style="color:#75715e">// ...
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{ <span style="color:#75715e">//... }
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Do</span>(<span style="color:#a6e22e">req</span>)
-<span style="color:#f92672">//</span> <span style="color:#f92672">...</span></code></pre></div>
+
+<pre><code class="language-go">req, err := http.NewRequest(&quot;GET&quot;, &quot;http://example.com&quot;, nil) // ...
+req.Header.Add(&quot;User-Agent&quot;, &quot;Gobook Custom User-Agent&quot;)
+// ...
+client := &amp;http.Client{ //... }
+resp, err := client.Do(req)
+// ...
+</code></pre>
+
 <h4 id="高级封装">高级封装</h4>
 
 <p>Go暴露了比较底层的HTTP相关库，让开发者灵活定制和使用HTTP服务。</p>
@@ -186,77 +121,83 @@
 </ul>
 
 <p>http.Transport类型的具体结构如下：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Transport</span> <span style="color:#66d9ef">struct</span> {
-<span style="color:#75715e">// Proxy指定用于针对特定请求返回代理的函数。
-</span><span style="color:#75715e">// 如果该函数返回一个非空的错误,请求将终止并返回该错误。
-</span><span style="color:#75715e">// 如果Proxy为空或者返回一个空的URL指针,将不使用代理
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">Proxy</span> <span style="color:#66d9ef">func</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">URL</span>, <span style="color:#66d9ef">error</span>)
-<span style="color:#75715e">// Dial指定用于创建TCP连接的dail()函数。
-</span><span style="color:#75715e">// 如果Dial为空,将默认使用net.Dial()函数
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">Dial</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">net</span>, <span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">c</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>)
-<span style="color:#75715e">// TLSClientConfig指定用于tls.Client的TLS配置。
-</span><span style="color:#75715e">// 如果为空则使用默认配置
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">TLSClientConfig</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>
-<span style="color:#a6e22e">DisableKeepAlives</span> <span style="color:#66d9ef">bool</span>
-<span style="color:#a6e22e">DisableCompression</span> <span style="color:#66d9ef">bool</span>
-<span style="color:#75715e">// 如果MaxIdleConnsPerHost为非零值,它用于控制每个host所需要
-</span><span style="color:#75715e">// 保持的最大空闲连接数。如果该值为空,则使用DefaultMaxIdleConnsPerHost 
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">MaxIdleConnsPerHost</span> <span style="color:#66d9ef">int</span>
-<span style="color:#75715e">// ... 
-</span><span style="color:#75715e"></span>}</code></pre></div>
+
+<pre><code class="language-go">type Transport struct {
+// Proxy指定用于针对特定请求返回代理的函数。
+// 如果该函数返回一个非空的错误,请求将终止并返回该错误。
+// 如果Proxy为空或者返回一个空的URL指针,将不使用代理
+Proxy func(*Request) (*url.URL, error)
+// Dial指定用于创建TCP连接的dail()函数。
+// 如果Dial为空,将默认使用net.Dial()函数
+Dial func(net, addr string) (c net.Conn, err error)
+// TLSClientConfig指定用于tls.Client的TLS配置。
+// 如果为空则使用默认配置
+TLSClientConfig *tls.Config
+DisableKeepAlives bool
+DisableCompression bool
+// 如果MaxIdleConnsPerHost为非零值,它用于控制每个host所需要
+// 保持的最大空闲连接数。如果该值为空,则使用DefaultMaxIdleConnsPerHost 
+MaxIdleConnsPerHost int
+// ... 
+}
+</code></pre>
+
 <p>其中<code>Proxy</code>指定了一个代理方法。如果 Proxy 未指定或者返回的 *URL 为零值,将不会有代理被启用；<code>TLSClientConfig</code>指定 tls.Client 所用的 TLS 配置信息,如果不指定, 也会使用默认的配置；<code>DisableKeepAlives</code>是否取消长连接,默认值为 false,即启用长连接；<code>DisableCompression</code>是否取消压缩(GZip),默认值为 false,即启用压缩。</p>
 
 <h4 id="通过proxy创建client示例">通过proxy创建client示例</h4>
 
 <p>下面为客户端的代码，其中我们对http.Transport指定了<code>Proxy</code>及<code>TLSClientConfig</code>, 相当于封装了具体的HTTP实现细节，最后通过<code>http.Client.Get</code>方法实现基于proxy的HTTP(s)代理。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
 
-<span style="color:#f92672">import</span> (
-        <span style="color:#e6db74">&#34;crypto/tls&#34;</span>
-        <span style="color:#e6db74">&#34;flag&#34;</span>
-        <span style="color:#e6db74">&#34;fmt&#34;</span>
-        <span style="color:#e6db74">&#34;net/http&#34;</span>
-        <span style="color:#e6db74">&#34;net/url&#34;</span>
-        <span style="color:#e6db74">&#34;time&#34;</span>
+<pre><code class="language-go">package main
+
+import (
+        &quot;crypto/tls&quot;
+        &quot;flag&quot;
+        &quot;fmt&quot;
+        &quot;net/http&quot;
+        &quot;net/url&quot;
+        &quot;time&quot;
 )
 
-<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span> = <span style="color:#ae81ff">10</span>
+const timeout time.Duration = 10
 
-<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-        <span style="color:#75715e">// Parse cmdline arguments using flag package
-</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">server</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;server&#34;</span>, <span style="color:#e6db74">&#34;abhijeetr.com&#34;</span>, <span style="color:#e6db74">&#34;Server to ping&#34;</span>)
-        <span style="color:#a6e22e">port</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Uint</span>(<span style="color:#e6db74">&#34;port&#34;</span>, <span style="color:#ae81ff">443</span>, <span style="color:#e6db74">&#34;Port that has TLS&#34;</span>)
-        <span style="color:#a6e22e">proxy</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">String</span>(<span style="color:#e6db74">&#34;proxyURL&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#e6db74">&#34;Proxy to use for TLS connection&#34;</span>)
-        <span style="color:#a6e22e">flag</span>.<span style="color:#a6e22e">Parse</span>()
+func main() {
+        // Parse cmdline arguments using flag package
+        server := flag.String(&quot;server&quot;, &quot;abhijeetr.com&quot;, &quot;Server to ping&quot;)
+        port := flag.Uint(&quot;port&quot;, 443, &quot;Port that has TLS&quot;)
+        proxy := flag.String(&quot;proxyURL&quot;, &quot;&quot;, &quot;Proxy to use for TLS connection&quot;)
+        flag.Parse()
 
-        <span style="color:#75715e">// Prepare the client
-</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">client</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>
-        <span style="color:#66d9ef">if</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">proxy</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
-                <span style="color:#a6e22e">proxyURL</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Parse</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">proxy</span>)
-                <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-                        panic(<span style="color:#e6db74">&#34;Error parsing proxy URL&#34;</span>)
+        // Prepare the client
+        var client http.Client
+        if *proxy != &quot;&quot; {
+                proxyURL, err := url.Parse(*proxy)
+                if err != nil {
+                        panic(&quot;Error parsing proxy URL&quot;)
                 }
-                <span style="color:#a6e22e">transport</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Transport</span>{
-                        <span style="color:#a6e22e">Proxy</span>:           <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ProxyURL</span>(<span style="color:#a6e22e">proxyURL</span>),
-                        <span style="color:#a6e22e">TLSClientConfig</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{<span style="color:#a6e22e">InsecureSkipVerify</span>: <span style="color:#66d9ef">true</span>},
+                transport := http.Transport{
+                        Proxy:           http.ProxyURL(proxyURL),
+                        TLSClientConfig: &amp;tls.Config{InsecureSkipVerify: true},
                 }
-                <span style="color:#a6e22e">client</span> = <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{
-                        <span style="color:#a6e22e">Transport</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">transport</span>,
-                        <span style="color:#a6e22e">Timeout</span>:   <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Millisecond</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">timeout</span>),
+                client = http.Client{
+                        Transport: &amp;transport,
+                        Timeout:   time.Duration(time.Millisecond * timeout),
                 }
 
-        } <span style="color:#66d9ef">else</span> {
-                <span style="color:#a6e22e">client</span> = <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{}
+        } else {
+                client = http.Client{}
         }
-        <span style="color:#75715e">// Now we&#39;ve proper client, with or without proxy
-</span><span style="color:#75715e"></span>
-        <span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;https://%v:%v&#34;</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">port</span>))
-        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-                panic(<span style="color:#e6db74">&#34;failed to connect: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
+        // Now we've proper client, with or without proxy
+
+        resp, err := client.Get(fmt.Sprintf(&quot;https://%v:%v&quot;, *server, *port))
+        if err != nil {
+                panic(&quot;failed to connect: &quot; + err.Error())
         }
 
-        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Time to expiry for the certificate: %v\n&#34;</span>, <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">TLS</span>.<span style="color:#a6e22e">PeerCertificates</span>[<span style="color:#ae81ff">0</span>].<span style="color:#a6e22e">NotAfter</span>.<span style="color:#a6e22e">Sub</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>()))
-}</code></pre></div>
+        fmt.Printf(&quot;Time to expiry for the certificate: %v\n&quot;, resp.TLS.PeerCertificates[0].NotAfter.Sub(time.Now()))
+}
+</code></pre>
+
 <h3 id="tls-client-创建代理连接"><code>tls.Client</code>创建代理连接</h3>
 
 <p>上述http.Client能够实现代理连接的创建，但是如果我们需要通过代理传输原始数据，即TCP层的数据传输，而不是应用层的HTTP数据传输，那么我们可以直接与<code>proxy</code>先建立连接，然后基于该连接再发送HTTP(s)数据。</p>
@@ -270,32 +211,35 @@
 <h4 id="建立连接">建立连接</h4>
 
 <p>如下代码段所示，首先与<code>proxy</code>建立connecton, 发送<code>CONNECT</code>方法的HTTP请求。 如果<code>proxy</code>返回了200，则后面就能够复用该连接了，否则与<code>proxy</code>的连接就失败了。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Dial</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">proxyURL</span>.<span style="color:#a6e22e">Host</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-                panic(<span style="color:#e6db74">&#34;Error net.Dial&#34;</span>)
-                <span style="color:#66d9ef">return</span>
+
+<pre><code class="language-go">if conn, err = net.Dial(&quot;tcp&quot;, proxyURL.Host); err != nil {
+                panic(&quot;Error net.Dial&quot;)
+                return
         }
 
-<span style="color:#75715e">// send an HTTP proxy CONNECT message
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#e6db74">&#34;CONNECT&#34;</span>, <span style="color:#e6db74">&#34;https://&#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">server</span>, <span style="color:#66d9ef">nil</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        panic(<span style="color:#e6db74">&#34;Error http.NewRequest&#34;</span>)
-        <span style="color:#66d9ef">return</span>
+// send an HTTP proxy CONNECT message
+req, err := http.NewRequest(&quot;CONNECT&quot;, &quot;https://&quot;+server, nil)
+if err != nil {
+        panic(&quot;Error http.NewRequest&quot;)
+        return
 }
-<span style="color:#75715e">//组织http协议，写入该connection
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Write</span>(<span style="color:#a6e22e">conn</span>)
+//组织http协议，写入该connection
+req.Write(conn)
 
-<span style="color:#75715e">// 读取proxy的返回
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ReadResponse</span>(<span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">conn</span>), <span style="color:#a6e22e">req</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        panic(<span style="color:#e6db74">&#34;Error http.ReadResponse&#34;</span>)
-        <span style="color:#66d9ef">return</span>
+// 读取proxy的返回
+resp, err := http.ReadResponse(bufio.NewReader(conn), req)
+if err != nil {
+        panic(&quot;Error http.ReadResponse&quot;)
+        return
 }
-<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+resp.Body.Close()
 
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">StatusCode</span> <span style="color:#f92672">!=</span> <span style="color:#ae81ff">200</span> {
-        <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Non-200 response from proxy server: %s&#34;</span>, <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Status</span>)
-        <span style="color:#66d9ef">return</span>
-}</code></pre></div>
+if resp.StatusCode != 200 {
+        err = fmt.Errorf(&quot;Non-200 response from proxy server: %s&quot;, resp.Status)
+        return
+}
+</code></pre>
+
 <h4 id="发送数据">发送数据</h4>
 
 <p>有了该连接后，对于HTTP的请求就好办了，按照发送CONNECT方法的HTTP请求一样，我们可以通过<code>NewRequest</code>创建<code>GET</code>/<code>POST</code>方法，然后写入<code>connection</code>, 处理回应消息。完成整个请求流程。</p>
@@ -303,56 +247,62 @@
 <p>但是对于HTTPS的请求, 因为需要TLS协议的加密，所以不能简单的传递明文，需要传递加密后的数据，这个过程在Go的<code>crypto/tls</code>包中已经实现了。我们需要对之前的connection再次封装一层，得到新的基于TLS协议的connection。</p>
 
 <p>代码段如下：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// 创建request结构
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#e6db74">&#34;GET&#34;</span>, <span style="color:#e6db74">&#34;https://&#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">server</span>, <span style="color:#66d9ef">nil</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        panic(<span style="color:#e6db74">&#34;Error http.NewRequest&#34;</span>)
-        <span style="color:#66d9ef">return</span>
+
+<pre><code class="language-go">// 创建request结构
+req, err = http.NewRequest(&quot;GET&quot;, &quot;https://&quot;+server, nil)
+if err != nil {
+        panic(&quot;Error http.NewRequest&quot;)
+        return
 }
 
-<span style="color:#75715e">//这里基于原先的conn创建了一个TLS的newConn
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">newConn</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Client</span>(<span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">proxyTlsConfig</span>)
+//这里基于原先的conn创建了一个TLS的newConn
+newConn := tls.Client(conn, proxyTlsConfig)
 
-<span style="color:#75715e">// 将request的相关信息写入到newConn中
-</span><span style="color:#75715e">// 后续将基于该newConn进行数据的读写操作
-</span><span style="color:#75715e"></span><span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Write</span>(<span style="color:#a6e22e">newConn</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        panic(<span style="color:#e6db74">&#34;Error req.Write&#34;</span>)
-        <span style="color:#66d9ef">return</span>
+// 将request的相关信息写入到newConn中
+// 后续将基于该newConn进行数据的读写操作
+err = req.Write(newConn)
+if err != nil {
+        panic(&quot;Error req.Write&quot;)
+        return
 }
-<span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">ReadResponse</span>(<span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">NewReader</span>(<span style="color:#a6e22e">newConn</span>), <span style="color:#a6e22e">req</span>)
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        panic(<span style="color:#e6db74">&#34;Error http.ReadResponse&#34;</span>)
-        <span style="color:#66d9ef">return</span>
+resp, err = http.ReadResponse(bufio.NewReader(newConn), req)
+if err != nil {
+        panic(&quot;Error http.ReadResponse&quot;)
+        return
 }
-<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">respBody</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        panic(<span style="color:#e6db74">&#34;Error http.ReadResponse&#34;</span>)
-        <span style="color:#66d9ef">return</span>
-} <span style="color:#66d9ef">else</span> {
-        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;resp: %s&#34;</span>, string(<span style="color:#a6e22e">respBody</span>))
+if respBody, err := ioutil.ReadAll(resp.Body); err != nil {
+        panic(&quot;Error http.ReadResponse&quot;)
+        return
+} else {
+        fmt.Printf(&quot;resp: %s&quot;, string(respBody))
 
 }
-<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()</code></pre></div>
+resp.Body.Close()
+</code></pre>
+
 <p>通过以上方式，我们也能够传递其他原始数据，经过代理，并且经过加密传输。那基于该传输层的数据传输，对应的server端如何接收呢？</p>
 
 <p>我们可以创建密钥，证书。然后通过<code>tls.Listen</code>方法监听指定端口。大致代码如下：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#a6e22e">cer</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">LoadX509KeyPair</span>(<span style="color:#e6db74">&#34;../cert_server/server.crt&#34;</span>, <span style="color:#e6db74">&#34;../cert_server/server.key&#34;</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
+
+<pre><code class="language-go">func main() {
+    cer, err := tls.LoadX509KeyPair(&quot;../cert_server/server.crt&quot;, &quot;../cert_server/server.key&quot;)
+    if err != nil {
+        fmt.Println(err.Error())
     }
-    <span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Config</span>{<span style="color:#a6e22e">Certificates</span>: []<span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Certificate</span>{<span style="color:#a6e22e">cer</span>}}
-    <span style="color:#a6e22e">listener</span>, <span style="color:#a6e22e">erl</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tls</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#e6db74">&#34;:8888&#34;</span>, <span style="color:#a6e22e">config</span>)
-    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">erl</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">erl</span>.<span style="color:#a6e22e">Error</span>())
-        <span style="color:#66d9ef">return</span>
+    config := &amp;tls.Config{Certificates: []tls.Certificate{cer}}
+    listener, erl := tls.Listen(&quot;tcp&quot;, &quot;:8888&quot;, config)
+    if erl != nil {
+        fmt.Println(erl.Error())
+        return
     }
-    <span style="color:#66d9ef">for</span> {
-        <span style="color:#a6e22e">conn</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">listener</span>.<span style="color:#a6e22e">Accept</span>()
-        <span style="color:#a6e22e">checkErr</span>(<span style="color:#a6e22e">err</span>)
-        <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">Handle</span>(<span style="color:#a6e22e">conn</span>)
+    for {
+        conn, err := listener.Accept()
+        checkErr(err)
+        go Handle(conn)
     }
-}</code></pre></div>
+}
+</code></pre>
+
 <h3 id="总结">总结</h3>
 
 <p>以上两种方式都能够实现通过proxy发送/接收HTTP(s)的请求。第一种方式相对来说简单，直接通过<code>http.Transport</code>的<code>proxy</code>字段设置就能通过代理发送请求，而第二种方式相对较为复杂，但是方法二更加的灵活，通过代理我们不仅能够收发HTTP(s)信息，同样也能对我们的原始数据进行加密传输。</p>
@@ -364,148 +314,176 @@
 <p><a href="https://golang.org/pkg/crypto/tls/">https://golang.org/pkg/crypto/tls/</a></p>
 
 <p>Go语言编程 Ch5 网络编程</p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2016/09/11/golang-https-proxy/">https://maodanp.github.io/2016/09/11/golang-https-proxy/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
 
-    
-    
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/golang/">
+                            <i class="fa fa-tags"></i>
+                            golang
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/%E4%BB%A3%E7%90%86/">
+                            <i class="fa fa-tags"></i>
+                            代理
+                        </a>
+                    </li>
+                    
+                </ul>
 
-    <h4>See also</h4>
-    <ul>
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"><li id="li-rels"><a href="/2016/09/04/go/">golang中context包</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年09月04日)</span></li><li id="li-rels"><a href="/2016/04/30/golang-interface/">Golang — 面向对象语言(方法、接口、匿名组合)</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年04月30日)</span></li><li id="li-rels"><a href="/2016/04/28/golang-resolve/">golang中域名解析问题</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年04月28日)</span></li><li id="li-rels"><a href="/2015/04/15/error-handling-in-go-part-ii/">golang错误处理(二)</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年04月15日)</span></li><li id="li-rels"><a href="/2015/04/12/error-handling-in-go-part-i/">golang错误处理(一)</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年04月12日)</span></li><li id="li-rels"><a href="/2016/03/15/using-pointers-in-go/">golang参数传递</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年03月15日)</span></li><li id="li-rels"><a href="/2016/03/01/understanding-slices-in-go-programming/">理解golang中的切片</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年03月01日)</span></li></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous"><a href="/2016/09/16/redis-lock/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2016/09/04/go/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
         
-            <li><a href="/2016/09/04/go/">golang中context包</a></li>
-        
-            <li><a href="/2016/04/30/golang-interface/">Golang — 面向对象语言(方法、接口、匿名组合)</a></li>
-        
-            <li><a href="/2016/04/28/golang-resolve/">golang中域名解析问题</a></li>
-        
-            <li><a href="/2015/04/15/error-handling-in-go-part-ii/">golang错误处理(二)</a></li>
-        
-            <li><a href="/2015/04/12/error-handling-in-go-part-i/">golang错误处理(一)</a></li>
-        
-    </ul>
+<aside>
+        <div class="toc panel panel-default hidden-xs hidden-sm affix-top" data-spy="affix" data-offset-top="125" data-offset-bottom="300">
+            <div class="panel-heading">
+                <h2 class="panel-title">Catalog</h2>
+            </div>
 
-
-</article>
-
-
-
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#http-client-创建代理连接"><code>http.Client</code>创建代理连接</a>
+<ul>
+<li><a href="#基本方法">基本方法</a></li>
+<li><a href="#高级封装">高级封装</a>
+<ul>
+<li><a href="#自定义http-transport">自定义http.Transport</a></li>
+</ul></li>
+<li><a href="#通过proxy创建client示例">通过proxy创建client示例</a></li>
+</ul></li>
+<li><a href="#tls-client-创建代理连接"><code>tls.Client</code>创建代理连接</a>
+<ul>
+<li><a href="#建立连接">建立连接</a></li>
+<li><a href="#发送数据">发送数据</a></li>
+</ul></li>
+<li><a href="#总结">总结</a></li>
+<li><a href="#参考阅读">参考阅读</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
         </div>
-
-        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
-    
-        
-
-
-<section>
-    <h4>Recent Posts</h4>
-    <ol class="list-unstyled">
-        
-        <li>
-            <a href="/2017/05/26/logistic-regression/">机器学习之Logistic回归</a>
-        </li>
-        
-        <li>
-            <a href="/2017/05/20/linear-regression/">机器学习之线性回归</a>
-        </li>
-        
-        <li>
-            <a href="/2017/04/10/probability/">机器学习之概率论</a>
-        </li>
-        
-        <li>
-            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
-        </li>
-        
-    </ol>
-</section>
-
-    
-    
-        <section>
-    
-        
-    
-        
-        <h4>Categories</h4>
-        <p>
-            
-            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
-            
-            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-            
-            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
-            
-        </p>
-        
-    
-        
-    
-        
-        <h4>Tags</h4>
-        <p>
-            
-            <a class="badge badge-primary" href="/tags/apache">apache</a>
-            
-            <a class="badge badge-primary" href="/tags/golang">golang</a>
-            
-            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
-            
-            <a class="badge badge-primary" href="/tags/linux">linux</a>
-            
-            <a class="badge badge-primary" href="/tags/logistic%E5%9B%9E%E5%BD%92">logistic回归</a>
-            
-            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
-            
-            <a class="badge badge-primary" href="/tags/network">network</a>
-            
-            <a class="badge badge-primary" href="/tags/php">php</a>
-            
-            <a class="badge badge-primary" href="/tags/redis">redis</a>
-            
-            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96">正则化</a>
-            
-            <a class="badge badge-primary" href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92">线性回归</a>
-            
-        </p>
-        
-    
-</section>
-    
 </aside>
 
-
-      </div>
     </div>
-    
+</div>
 
-    
-      <footer class="blog-footer w-100">
-    <nav class="navbar navbar-light bg-light">
-        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#">Back to top</a></p>
-    </nav>
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2016  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
 </footer>
-    
 
-    
-    
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
 </html>
+

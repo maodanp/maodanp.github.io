@@ -1,152 +1,83 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!DOCTYPE html>
 
-<meta property="og:title" content="分布式存储之Raft协议应用详解" />
-<meta property="og:description" content="最近研究Raft协议，也阅读了go-raft的实现代码，虽然已经不维护了，但etcd, InfluxDB等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对论文与实现过程作简要的分析, 并分析了Raft的容错处理。
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="最近研究Raft协议，也阅读了go-raft的实现代码，虽然已经不维护了，但etcd, InfluxDB等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对论文与实现过程作简要的分析, 并分析了Raft的容错处理。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="分布式存储之Raft协议应用详解 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
 
-" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="http://maodanp.github.io/2016/08/13/bigdata-raft-state/" />
-
-
-
-<meta property="article:published_time" content="2016-08-13T00:00:00&#43;00:00"/>
-
-<meta property="article:modified_time" content="2016-08-13T00:00:00&#43;00:00"/>
-
-
-
-
-
-
-
-
-
-
-
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="分布式存储之Raft协议应用详解"/>
-<meta name="twitter:description" content="最近研究Raft协议，也阅读了go-raft的实现代码，虽然已经不维护了，但etcd, InfluxDB等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对论文与实现过程作简要的分析, 并分析了Raft的容错处理。
-
-"/>
-
-
-    <link rel="canonical" href="http://maodanp.github.io/2016/08/13/bigdata-raft-state/">
-
-    <title>
-      
-        分布式存储之Raft协议应用详解 | Danping&#39;s Blog
-      
-    </title>
-
+<title>
     
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-    <link href="http://maodanp.github.io/css/style.css" rel="stylesheet">
-
+    分布式存储之Raft协议应用详解
     
+</title>
 
-    
-
-    
-  </head>
-  <body>
-    
-      <header class="blog-header">
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
-        <a class="navbar-brand" href="/">
-            Danping&#39;s Blog
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-            aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-            <ul class="navbar-nav">
-                
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/">主页</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%e6%8a%80%e6%9c%af%e5%bf%97/">技术志</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1/">工具箱</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/categories/%e6%9d%82%e8%b0%88%e9%9b%86/">杂谈集</a>
-                </li>
-                
-                <li class="nav-item ">
-                    <a class="nav-link" href="/about/">关于</a>
-                </li>
-                
-            </ul>
-            
-        </div>
-	
-    </nav>
-</header>
-
-    
-
-    
-    <div class="container">
-      <div class="row">
-        <div class="col-12 col-lg-8 blog-main">
-
-          
-
-<article class="blog-post">
-    <header>
-        <h2 class="blog-post-title">
-            <a class="text-dark" href="/2016/08/13/bigdata-raft-state/">分布式存储之Raft协议应用详解</a>
-        </h2>
-        
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
 
 
-<div class="blog-post-date text-secondary">
-    
-        Aug 13, 2016
-    
-    
-        by Danping Mao
-    
-</div>
-        
-<div class="blog-post-tags text-secondary">
-    <strong>Tags:</strong>
-    
-        <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
-    
-</div>
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
 
-        
-<div class="blog-post-categories text-secondary">
-    <strong>Categories:</strong>
-    
-        <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-    
-</div>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
 
+                </div>
+            </div>
+        </nav>
     </header>
-    <hr>
-    <p>最近研究Raft协议，也阅读了<a href="https://github.com/goraft/raft">go-raft</a>的实现代码，虽然已经不维护了，但<strong>etcd</strong>, <strong>InfluxDB</strong>等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对<a href="http://files.catwell.info/misc/mirror/raft/raft.pdf">论文</a>与实现过程作简要的分析, 并分析了Raft的容错处理。</p>
 
-<p></p>
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2016年08月13日 
+                </div>
+                <h1 class="post-title">分布式存储之Raft协议应用详解</h1>
+            </header>
+
+            <div class="post-content">
+                <p>最近研究Raft协议，也阅读了<a href="https://github.com/goraft/raft">go-raft</a>的实现代码，虽然已经不维护了，但<strong>etcd</strong>, <strong>InfluxDB</strong>等项目前期都是使用的该库，还是很有工程上的参考价值。本篇针对<a href="http://files.catwell.info/misc/mirror/raft/raft.pdf">论文</a>与实现过程作简要的分析, 并分析了Raft的容错处理。</p>
 
 <h3 id="raft节点状态数据">Raft节点状态数据</h3>
 
 <p>下图为每个Raft节点保存的一些状态信息：</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-1.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-1.png" alt="" /></p>
 
 <p>大致解释为：</p>
 
@@ -298,7 +229,7 @@
 
 <p>以下为<strong>AppendEntries RPC</strong>的格式和说明:</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-2.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-2.png" alt="" /></p>
 
 <p>从以上<strong>AEs(AppendEntries RPC)</strong>的请求、响应格式说明可以看到，Raft对于实现细节有非常清晰的界定与描述。对于RPC接受者的实现主要有以下几种情况：</p>
 
@@ -311,46 +242,49 @@
 </ul>
 
 <p><strong>goraft</strong>中的<strong>AEs RPC</strong>处理过程基本遵循上述处理流程，对应中的主要代码段如下：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"> <span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">processAppendEntriesRequest</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AppendEntriesRequest</span>){
 
-      <span style="color:#75715e">//如果AppendEntries请求的term小于该server当前term
-</span><span style="color:#75715e"></span>      <span style="color:#75715e">//返回失败
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> &lt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span> {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.ae.error: stale term&#34;</span>)
-          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+<pre><code class="language-go"> func (s *server) processAppendEntriesRequest(req *AppendEntriesRequest){
+
+      //如果AppendEntries请求的term小于该server当前term
+      //返回失败
+      if req.Term &lt; s.currentTerm {
+          s.debugln(&quot;server.ae.error: stale term&quot;)
+          return false
       }
 
-      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span> {
+      if req.Term == s.currentTerm {
 
-          <span style="color:#75715e">// 当server处于candidate状态，则降为follower
-</span><span style="color:#75715e"></span>          <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">state</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">Candidate</span> {
-              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">setState</span>(<span style="color:#a6e22e">Follower</span>)
+          // 当server处于candidate状态，则降为follower
+          if s.state == Candidate {
+              s.setState(Follower)
           }
 
-      } <span style="color:#66d9ef">else</span> {
+      } else {
      
-          <span style="color:#75715e">// term 比 目前的大，则有新的leader产生
-</span><span style="color:#75715e"></span>          <span style="color:#75715e">// 更新 term 以及 leader
-</span><span style="color:#75715e"></span>          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">updateCurrentTerm</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">LeaderName</span>)
+          // term 比 目前的大，则有新的leader产生
+          // 更新 term 以及 leader
+          s.updateCurrentTerm(req.Term, req.LeaderName)
       }
 
-      <span style="color:#75715e">// 将req.PrevLogIndex 编号后的log entry都删除了
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">truncate</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">PrevLogIndex</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">PrevLogTerm</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+      // 将req.PrevLogIndex 编号后的log entry都删除了
+      if err := s.log.truncate(req.PrevLogIndex, req.PrevLogTerm); err != nil {
+          return false
       }
 
-     <span style="color:#75715e">// 加入该server节点的 log entries
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">appendEntries</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Entries</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+     // 加入该server节点的 log entries
+      if err := s.log.appendEntries(req.Entries); err != nil {
+          return false
       }
 
-      <span style="color:#75715e">// 提交至req.CommitIndex
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">setCommitIndex</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">CommitIndex</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.ae.commit.error: &#34;</span>, <span style="color:#a6e22e">err</span>)
-          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
+      // 提交至req.CommitIndex
+      if err := s.log.setCommitIndex(req.CommitIndex); err != nil {
+          s.debugln(&quot;server.ae.commit.error: &quot;, err)
+          return true
       }
-      <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
-  }</code></pre></div>
+      return true;
+  }
+</code></pre>
+
 <p><strong>Leader</strong>对于 <strong>AppendEntries RPC Response</strong>的处理流程:</p>
 
 <ul>
@@ -358,45 +292,48 @@
 <li>如果收到大多数节点的<strong>AEs</strong>成功回应，后续会判断下次的提交编号，否则返回</li>
 <li>Leader根据大多数节点返回的上次log的索引编号，来决定这次提交的编号， 该提交编号将在下次随<strong>AEs RPC</strong>传给follower</li>
 </ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">processAppendEntriesResponse</span>(<span style="color:#a6e22e">resp</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AppendEntriesResponse</span>) {
+
+<pre><code class="language-go">func (s *server) processAppendEntriesResponse(resp *AppendEntriesResponse) {
  
-      <span style="color:#75715e">// 如果发现AppendEntries的返回中term较大，则角色变为follower
-</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 这个判断非常重要，能够保证网络分区恢复后的一致性
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Term</span>() &gt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Term</span>() {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">updateCurrentTerm</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Term</span>(), <span style="color:#e6db74">&#34;&#34;</span>)
-          <span style="color:#66d9ef">return</span>
+      // 如果发现AppendEntries的返回中term较大，则角色变为follower
+      // 这个判断非常重要，能够保证网络分区恢复后的一致性
+      if resp.Term() &gt; s.Term() {
+          s.updateCurrentTerm(resp.Term(), &quot;&quot;)
+          return
       }
 
-      <span style="color:#75715e">// 对于回应返回成功的，更新map表
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">append</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">true</span> {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">syncedPeer</span>[<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">peer</span>] = <span style="color:#66d9ef">true</span>
+      // 对于回应返回成功的，更新map表
+      if resp.append == true {
+          s.syncedPeer[resp.peer] = true
       }
 
-      <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">syncedPeer</span>) &lt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">QuorumSize</span>() {
-          <span style="color:#66d9ef">return</span>
+      if len(s.syncedPeer) &lt; s.QuorumSize() {
+          return
       }
 
-      <span style="color:#75715e">// 计算此次需要提交的编号
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">indices</span> []<span style="color:#66d9ef">uint64</span>
-      <span style="color:#a6e22e">indices</span> = append(<span style="color:#a6e22e">indices</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">currentIndex</span>())
-      <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">peer</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">peers</span> {
-          <span style="color:#a6e22e">indices</span> = append(<span style="color:#a6e22e">indices</span>, <span style="color:#a6e22e">peer</span>.<span style="color:#a6e22e">getPrevLogIndex</span>())
+      // 计算此次需要提交的编号
+      var indices []uint64
+      indices = append(indices, s.log.currentIndex())
+      for _, peer := range s.peers {
+          indices = append(indices, peer.getPrevLogIndex())
       }
-      <span style="color:#a6e22e">sort</span>.<span style="color:#a6e22e">Sort</span>(<span style="color:#a6e22e">sort</span>.<span style="color:#a6e22e">Reverse</span>(<span style="color:#a6e22e">uint64Slice</span>(<span style="color:#a6e22e">indices</span>)))
+      sort.Sort(sort.Reverse(uint64Slice(indices)))
 
-      <span style="color:#a6e22e">commitIndex</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">indices</span>[<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">QuorumSize</span>()<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
-      <span style="color:#a6e22e">committedIndex</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">commitIndex</span>
+      commitIndex := indices[s.QuorumSize()-1]
+      committedIndex := s.log.commitIndex
 
-      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">commitIndex</span> &gt; <span style="color:#a6e22e">committedIndex</span> {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">sync</span>()
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">setCommitIndex</span>(<span style="color:#a6e22e">commitIndex</span>)
+      if commitIndex &gt; committedIndex {
+          s.log.sync()
+          s.log.setCommitIndex(commitIndex)
       }
-  }</code></pre></div>
+  }
+</code></pre>
+
 <h4 id="requestvote-rpc">RequestVote RPC</h4>
 
 <p>以下为<strong>RequestVote RPC</strong>的格式和说明:</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-3.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-3.png" alt="" /></p>
 
 <p>对于<strong>RequestVote RPC</strong>接受者的处理流程：</p>
 
@@ -406,78 +343,87 @@
 </ul>
 
 <p><strong>goraft</strong>中的<strong>RequestVote RPC</strong>处理过程主要代码段如下：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">processRequestVoteRequest</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">RequestVoteRequest</span>){
 
-      <span style="color:#75715e">// term小于当前的，则返回false
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> &lt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Term</span>() {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.rv.deny.vote: cause stale term&#34;</span>)
-		  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+<pre><code class="language-go">
+func (s *server) processRequestVoteRequest(req *RequestVoteRequest){
+
+      // term小于当前的，则返回false
+      if req.Term &lt; s.Term() {
+          s.debugln(&quot;server.rv.deny.vote: cause stale term&quot;)
+		  return false
       }
 
-      <span style="color:#75715e">// 如果请求的term大于该节点的term，则更新该节点的term
-</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 如果term相等，且我们已经投给了其他候选节点(votedFor参数),则不投给该候选节点candidate
-</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 即一个任期内只投给一个候选节点，但是可以投多次（可能存在网络异常，候选节点再次发出投票请求）
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span> &gt; <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">Term</span>() {
-          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">updateCurrentTerm</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Term</span>, <span style="color:#e6db74">&#34;&#34;</span>)
-      } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">CandidateName</span> {
-          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+      // 如果请求的term大于该节点的term，则更新该节点的term
+      // 如果term相等，且我们已经投给了其他候选节点(votedFor参数),则不投给该候选节点candidate
+      // 即一个任期内只投给一个候选节点，但是可以投多次（可能存在网络异常，候选节点再次发出投票请求）
+      if req.Term &gt; s.Term() {
+          s.updateCurrentTerm(req.Term, &quot;&quot;)
+      } else if s.votedFor != &quot;&quot; &amp;&amp; s.votedFor != req.CandidateName {
+          return false
       }
 
-      <span style="color:#75715e">// 如果candidate中最新日志项编号小于 当前server的最新日志项编号，则不投票
-</span><span style="color:#75715e"></span>      <span style="color:#75715e">// 这里满足了Raft的安全性：必须要比大部分其它候选者的log新，才有机会成为leader
-</span><span style="color:#75715e"></span>      <span style="color:#a6e22e">lastIndex</span>, <span style="color:#a6e22e">lastTerm</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">lastInfo</span>()
-      <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">lastIndex</span> &gt; <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">LastLogIndex</span> <span style="color:#f92672">||</span> <span style="color:#a6e22e">lastTerm</span> &gt; <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">LastLogTerm</span> {
-          <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+      // 如果candidate中最新日志项编号小于 当前server的最新日志项编号，则不投票
+      // 这里满足了Raft的安全性：必须要比大部分其它候选者的log新，才有机会成为leader
+      lastIndex, lastTerm := s.log.lastInfo()
+      if lastIndex &gt; req.LastLogIndex || lastTerm &gt; req.LastLogTerm {
+          return false
       }
 
-      <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> = <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">CandidateName</span>
+      s.votedFor = req.CandidateName
 
-      <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>
-  }</code></pre></div>
+      return true
+  }
+
+</code></pre>
+
 <p><strong>Candidate</strong>对于<strong>RequestVote RPC Response</strong>的处理流程:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"> <span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">server</span>) <span style="color:#a6e22e">candidateLoop</span>() {
-	  <span style="color:#75715e">//处于 Candidate 状态，直到状态改变为leader或者follower
-</span><span style="color:#75715e"></span>	  <span style="color:#75715e">//否则超时后再次发起投票请求     
-</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">State</span>() <span style="color:#f92672">==</span> <span style="color:#a6e22e">Candidate</span> {
 
-          <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">doVote</span> {
-              <span style="color:#75715e">//自增term
-</span><span style="color:#75715e"></span>              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span><span style="color:#f92672">++</span>
-              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">votedFor</span> = <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">name</span>
+<pre><code class="language-go">
+ func (s *server) candidateLoop() {
+	  //处于 Candidate 状态，直到状态改变为leader或者follower
+	  //否则超时后再次发起投票请求     
+      for s.State() == Candidate {
 
-              <span style="color:#75715e">// 向每个servers发送 RequestVote RPCs
-</span><span style="color:#75715e"></span>              <span style="color:#a6e22e">respChan</span> = make(<span style="color:#66d9ef">chan</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">RequestVoteResponse</span>, len(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">peers</span>))
-              <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">peer</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">peers</span> {
-                  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">routineGroup</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">1</span>)
-                  <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">peer</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Peer</span>) {
-                      <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">routineGroup</span>.<span style="color:#a6e22e">Done</span>()
-                      <span style="color:#a6e22e">peer</span>.<span style="color:#a6e22e">sendVoteRequest</span>(<span style="color:#a6e22e">newRequestVoteRequest</span>(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">currentTerm</span>, <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">lastLogIndex</span>, <span style="color:#a6e22e">lastLogTerm</span>), <span style="color:#a6e22e">respChan</span>)
-                  }(<span style="color:#a6e22e">peer</span>)
+          if doVote {
+              //自增term
+              s.currentTerm++
+              s.votedFor = s.name
+
+              // 向每个servers发送 RequestVote RPCs
+              respChan = make(chan *RequestVoteResponse, len(s.peers))
+              for _, peer := range s.peers {
+                  s.routineGroup.Add(1)
+                  go func(peer *Peer) {
+                      defer s.routineGroup.Done()
+                      peer.sendVoteRequest(newRequestVoteRequest(s.currentTerm, s.name, lastLogIndex, lastLogTerm), respChan)
+                  }(peer)
               }
 
-              <span style="color:#75715e">//发起请求后的变量初始化
-</span><span style="color:#75715e"></span>              <span style="color:#a6e22e">votesGranted</span> = <span style="color:#ae81ff">1</span>
-              <span style="color:#a6e22e">timeoutChan</span> = <span style="color:#a6e22e">afterBetween</span>(<span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">ElectionTimeout</span>(), <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">ElectionTimeout</span>()<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>)
-              <span style="color:#a6e22e">doVote</span> = <span style="color:#66d9ef">false</span>
+              //发起请求后的变量初始化
+              votesGranted = 1
+              timeoutChan = afterBetween(s.ElectionTimeout(), s.ElectionTimeout()*2)
+              doVote = false
            }
 
-           <span style="color:#75715e">//如果收到超过半数以上的投票支持，则状态变为leader
-</span><span style="color:#75715e"></span>           <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">votesGranted</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">QuorumSize</span>() {
-              <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">setState</span>(<span style="color:#a6e22e">Leader</span>)
-              <span style="color:#66d9ef">return</span>
+           //如果收到超过半数以上的投票支持，则状态变为leader
+           if votesGranted == s.QuorumSize() {
+              s.setState(Leader)
+              return
            }
 
-          <span style="color:#66d9ef">select</span> {
-          <span style="color:#75715e">//处理收到RequestVote RPC回应
-</span><span style="color:#75715e"></span>          <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">respChan</span>:
-              <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">success</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">processVoteResponse</span>(<span style="color:#a6e22e">resp</span>); <span style="color:#a6e22e">success</span> {
-                  <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">debugln</span>(<span style="color:#e6db74">&#34;server.candidate.vote.granted: &#34;</span>, <span style="color:#a6e22e">votesGranted</span>)
-                  <span style="color:#a6e22e">votesGranted</span><span style="color:#f92672">++</span>
+          select {
+          //处理收到RequestVote RPC回应
+          case resp := &lt;-respChan:
+              if success := s.processVoteResponse(resp); success {
+                  s.debugln(&quot;server.candidate.vote.granted: &quot;, votesGranted)
+                  votesGranted++
               }
-          <span style="color:#75715e">//如果选举超时，则继续选举    	
-</span><span style="color:#75715e"></span>          <span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">timeoutChan</span>:
-              <span style="color:#a6e22e">doVote</span> = <span style="color:#66d9ef">true</span>
-       }</code></pre></div>
+          //如果选举超时，则继续选举    	
+          case &lt;-timeoutChan:
+              doVote = true
+       }
+</code></pre>
+
 <h3 id="raft的failure处理">Raft的failure处理</h3>
 
 <p>Raft关于容错的处理是需要考虑的方面。主要的异常包括<strong>Leader crash</strong>、<strong>Follower crash</strong>、<strong>Network Partition</strong>等。</p>
@@ -498,7 +444,7 @@
 
 <p>下图为情况(2)中(a)的情形，即大多数节点都<strong>AppendEntries</strong>了，根据Raft安全性原则，后续的<strong>Leader</strong>在*F_1*或者<em>F_2</em> 中产生，那么 “Hello”命令也间接被提交了。</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-4.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-4.png" alt="" /></p>
 
 <p>对于情况(3)，类似于情况(2)中的(a)。</p>
 
@@ -508,7 +454,7 @@
 
 <p><strong>Follower crash</strong>比较简单，主要是<strong>crash</strong>恢复后怎么保持log与<strong>Leader</strong>的一致性。具体如图示，*F_4*恢复后，怎么保持数据一致？</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-5.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-5.png" alt="" /></p>
 
 <p>在之前<strong>节点状态数据</strong>中我们看到，每个<strong>节点</strong>中会维护一个<strong>Peer[]</strong>, 存放集群中的节点信息。其中就有一个<strong>prevLogIndex</strong>，用于维护上一次该<strong>Follower</strong>最新添加的log的索引号。如果 <em>F_4</em> 恢复了，<strong>Leader</strong>中维护的<strong>prevLogIndex=1</strong>，后续将从索引2开始的所有<strong>log entries</strong>发送给 <em>F_4</em> 。</p>
 
@@ -520,17 +466,17 @@
 
 <p>下图为网络分区的一种情形，其中<em>le_1</em> 为原来的<strong>Leader</strong>， *le_2*为分区二新选举出的<strong>Leader</strong>（<strong>term</strong>比分区一的大)。</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-6.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-6.png" alt="" /></p>
 
 <p>对于图中的<strong>分区一</strong>，由于通信的节点不满足大多数节点（这里假设没有机制去变化整个集群总共的节点数量），所以向该分区中添加的日志都不能提交，客户端将一直收到超时的回复。而对于<strong>分区二</strong>，满足提交的条件，该分区中的日志都能够被正常提交。</p>
 
 <p>待分区恢复，*le_1*由于term小于*le_2*，则自动转为Follower状态，如下图所示，最终能够实现一致性。</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-7.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-7.png" alt="" /></p>
 
 <p>下图为网络分区的另一种情形，<em>le_1</em> 分区占有了大部分节点，能够正常的提交日志。但是<strong>分区二</strong>中的两个<strong>Follower</strong>节点，由于选票个数未过半，将持续处于<strong>Candidate</strong>状态，直到网络恢复。</p>
 
-<p><img src="http://7xt5nc.com1.z0.glb.clouddn.com/pic/2016/2016-08-13-bigdata-raft-state-8.png" alt="" /></p>
+<p><img src="./pic/2016/2016-08-13-bigdata-raft-state-8.png" alt="" /></p>
 
 <p>由于<strong>分区二</strong>的竞选，导致term不停增加，网络分区恢复后，集群中的term号会随着<strong>leader</strong>的<strong>AppendEntries RPC</strong>（参见<strong>processAppendEntriesResponse</strong>函数），将term一起同步到最新。</p>
 
@@ -543,148 +489,161 @@
 <p><a href="https://github.com/goraft/raft">https://github.com/goraft/raft</a></p>
 
 <p><a href="http://www.tuicool.com/articles/aERnm2U">从raft看failure的处理</a></p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2016/08/13/bigdata-raft-state/">https://maodanp.github.io/2016/08/13/bigdata-raft-state/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
 
-    
-    
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/">
+                            <i class="fa fa-tags"></i>
+                            分布式存储
+                        </a>
+                    </li>
+                    
+                </ul>
 
-    <h4>See also</h4>
-    <ul>
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"><li id="li-rels"><a href="/2016/08/05/bigdata-raft/">分布式存储之Raft协议</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年08月05日)</span></li><li id="li-rels"><a href="/2016/07/17/bigdata-2pc/">分布式存储之2PC协议</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年07月17日)</span></li><li id="li-rels"><a href="/2016/07/02/bigdata-cap/">分布式存储之CAP原则</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年07月02日)</span></li><li id="li-rels"><a href="/2016/06/25/bigdata-data-slice/">分布式存储之数据切片</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2016年06月25日)</span></li><li id="li-rels"><a href="/2015/06/18/distrubuted-server/">简单分布式服务器框架</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2015年06月18日)</span></li></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous"><a href="/2016/09/03/linux-performace-cmd-one/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2016/08/06/sublime-shortcut/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
         
-            <li><a href="/2016/08/05/bigdata-raft/">分布式存储之Raft协议</a></li>
-        
-            <li><a href="/2016/07/17/bigdata-2pc/">分布式存储之2PC协议</a></li>
-        
-            <li><a href="/2016/07/02/bigdata-cap/">分布式存储之CAP原则</a></li>
-        
-            <li><a href="/2016/06/25/bigdata-data-slice/">分布式存储之数据切片</a></li>
-        
-            <li><a href="/2015/06/18/distrubuted-server/">简单分布式服务器框架</a></li>
-        
-    </ul>
+<aside>
+        <div class="toc panel panel-default hidden-xs hidden-sm affix-top" data-spy="affix" data-offset-top="125" data-offset-bottom="300">
+            <div class="panel-heading">
+                <h2 class="panel-title">Catalog</h2>
+            </div>
 
-
-</article>
-
-
-
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#raft节点状态数据">Raft节点状态数据</a></li>
+<li><a href="#raft的rpc">Raft的RPC</a>
+<ul>
+<li><a href="#appendentries-rpc">AppendEntries RPC</a></li>
+<li><a href="#requestvote-rpc">RequestVote RPC</a></li>
+</ul></li>
+<li><a href="#raft的failure处理">Raft的failure处理</a></li>
+<li><a href="#参考阅读">参考阅读</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
         </div>
-
-        <aside class="col-12 col-lg-3 ml-auto blog-sidebar">
-    
-        
-
-
-<section>
-    <h4>Recent Posts</h4>
-    <ol class="list-unstyled">
-        
-        <li>
-            <a href="/2017/05/26/logistic-regression/">机器学习之Logistic回归</a>
-        </li>
-        
-        <li>
-            <a href="/2017/05/20/linear-regression/">机器学习之线性回归</a>
-        </li>
-        
-        <li>
-            <a href="/2017/04/10/probability/">机器学习之概率论</a>
-        </li>
-        
-        <li>
-            <a href="/2017/04/03/math-analysis/">机器学习之数学分析</a>
-        </li>
-        
-        <li>
-            <a href="/2016/09/16/redis-lock/">基于redis的分布式锁的实现方案</a>
-        </li>
-        
-    </ol>
-</section>
-
-    
-    
-        <section>
-    
-        
-    
-        
-        <h4>Categories</h4>
-        <p>
-            
-            <a class="badge badge-primary" href="/categories/%E5%B7%A5%E5%85%B7%E7%AE%B1">工具箱</a>
-            
-            <a class="badge badge-primary" href="/categories/%E6%8A%80%E6%9C%AF%E5%BF%97">技术志</a>
-            
-            <a class="badge badge-primary" href="/categories/%E6%9D%82%E8%B0%88%E9%9B%86">杂谈集</a>
-            
-        </p>
-        
-    
-        
-    
-        
-        <h4>Tags</h4>
-        <p>
-            
-            <a class="badge badge-primary" href="/tags/apache">apache</a>
-            
-            <a class="badge badge-primary" href="/tags/golang">golang</a>
-            
-            <a class="badge badge-primary" href="/tags/iptables">iptables</a>
-            
-            <a class="badge badge-primary" href="/tags/linux">linux</a>
-            
-            <a class="badge badge-primary" href="/tags/logistic%E5%9B%9E%E5%BD%92">logistic回归</a>
-            
-            <a class="badge badge-primary" href="/tags/machine-learning">machine-learning</a>
-            
-            <a class="badge badge-primary" href="/tags/network">network</a>
-            
-            <a class="badge badge-primary" href="/tags/php">php</a>
-            
-            <a class="badge badge-primary" href="/tags/redis">redis</a>
-            
-            <a class="badge badge-primary" href="/tags/%E4%BB%A3%E7%90%86">代理</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8">分布式存储</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81">分布式锁</a>
-            
-            <a class="badge badge-primary" href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95">压力测试</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%80%A7%E8%83%BD">服务器性能</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%A8%A1%E5%9E%8B">服务器模型</a>
-            
-            <a class="badge badge-primary" href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96">正则化</a>
-            
-            <a class="badge badge-primary" href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92">线性回归</a>
-            
-        </p>
-        
-    
-</section>
-    
 </aside>
 
-
-      </div>
     </div>
-    
+</div>
 
-    
-      <footer class="blog-footer w-100">
-    <nav class="navbar navbar-light bg-light">
-        <p class="w-100 text-center">Hugo template made with ❤ by <a href="https://github.com/Xzya">Xzya</a>, inspired by <a href="https://github.com/alanorth/hugo-theme-bootstrap4-blog">hugo-theme-bootstrap4-blog</a></p>
-        <p class="w-100 text-center"><a href="#">Back to top</a></p>
-    </nav>
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2016  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
 </footer>
-    
 
-    
-    
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
 </html>
+
