@@ -8,11 +8,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="description" content="本篇主要描述 lambda 函数以及跟仿函数的关联，最后介绍 lambda 的使用陷阱。">
 <meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
-<meta property="og:title" content="lambda 函数 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+<meta property="og:title" content="C&#43;&#43; lambda 函数 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
 
 <title>
     
-    lambda 函数
+    C&#43;&#43; lambda 函数
     
 </title>
 
@@ -67,7 +67,7 @@
                 <div class="post-date">
                     2020年06月02日 
                 </div>
-                <h1 class="post-title">lambda 函数</h1>
+                <h1 class="post-title">C&#43;&#43; lambda 函数</h1>
             </header>
 
             <div class="post-content">
@@ -137,7 +137,7 @@ int main()
 
 <p>可以看出 lambda 和仿函数有着相同的内涵：<code>捕捉一些变量作为初始状态，并接受参数进行运算</code>。在 C++ 中，lambda 可以视为仿函数的一种 “语法糖”。</p>
 
-<p><img src="/pic/2019/2020-06-02-cpp_lambda.png" alt="pic" /></p>
+<p><img src="/pic/2020/2020-06-02-cpp_lambda.png" alt="pic" /></p>
 
 <p>但是 lambda 不是仿函数的完全替代者，由于 lambda 的捕捉列表的限制（仅仅能够捕捉到负作用域的非静态变量，而对于超出这个范围的变量是不能被捕捉的）。</p>
 
