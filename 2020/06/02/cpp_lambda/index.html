@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="本篇主要描述 lambda 函数以及跟仿函数的关联，最后介绍 lambda 的使用陷阱。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="lambda 函数 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+
+<title>
+    
+    lambda 函数
+    
+</title>
+
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
+
+
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2020年06月02日 
+                </div>
+                <h1 class="post-title">lambda 函数</h1>
+            </header>
+
+            <div class="post-content">
+                <p>本篇主要描述 lambda 函数以及跟仿函数的关联，最后介绍 lambda 的使用陷阱。</p>
+
+<h3 id="lambda-介绍">lambda 介绍</h3>
+
+<p>lambda 表达式是 C++11 中引入的一项新技术，利用lambda表达式可以编写内嵌的匿名函数，用以替换独立函数或者函数对象，并且使代码更可读。lambda 函数的格式如下：</p>
+
+<p><code>[capture](parameters) mutable -&gt;return—type {statement}</code></p>
+
+<ul>
+<li><code>[capture]</code> 捕捉列表。能够捕捉上下文中的变量以供lambda函数使用。捕获只能用于可见（在创建lambda的作用域可见）的非static局部变量（包含形参）</li>
+<li><code>(parameters)</code> 参数列表。与普通函数的参数列表一致，若不需要参数传递，可以连同括号一起省略。</li>
+<li><code>mutable</code> 修饰符。默认情况下lambda函数总是一个const函数，mutable可以取消其常量性。</li>
+<li><code>-&gt;return-type</code> 返回类型。也可以省略该部分，让编译器对返回类型自动推导。</li>
+<li><code>{statements}</code> 函数体，跟普通函数一样。除了可以使用的形参之外，还可以使用所有捕获的变量。</li>
+</ul>
+
+<p>捕获列表由多个捕捉项组成，并且以逗号分隔。具体说来会有以下几种情况来捕获其所在作用域中的变量：</p>
+
+<ul>
+<li><code>[]</code> 默认不捕获任何变量；</li>
+<li><code>[=]</code> 默认以值捕获所有变量（ 包括 <code>this</code> ）；</li>
+<li><code>[&amp;]</code> 默认以引用捕获所有变量（ 包括 <code>this</code> ）；</li>
+<li><code>[var]</code> 仅以值捕获 var，其它变量不捕获；</li>
+<li><code>[&amp;var]</code> 仅以引用捕获 var，其它变量不捕获；</li>
+<li><code>[=, &amp;var]</code> 默认以值捕获所有变量，但是 var 是例外，通过引用捕获；</li>
+<li><code>[&amp;, var]</code> 默认以引用捕获所有变量，但是 var 是例外，通过值捕获；</li>
+<li><code>[this]</code> 通过值传递方式捕获当前的 this 指针。</li>
+</ul>
+
+<h3 id="lambda-与-仿函数">lambda 与 仿函数</h3>
+
+<p>在 C++11 之前，我们在使用 STL 算法时，通常会使用到函数对象或者仿函数（ functor ）。仿函数简单而言就是重新定义了成员函数 <code>operator()</code> 的一种自定义类型对象。</p>
+
+<p>下面代码显示的例子分别使用了仿函数和 lambda 两种方式计算产品的价格。</p>
+
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+
+class AirportPrice{
+private:
+ float _dutyFree;
+public:
+ AirportPrice(float rate): _dutyFree(rate){}
+ float operator()(float price){
+    return price*(1-_dutyFree/100);
+ }
+};
+
+int main()
+{
+    float tax_rate = 5.5f;
+    AirportPrice pricePurchased1(tax_rate);
+
+    auto pricePurchased2 = [tax_rate](float price){return price*(1-tax_rate/100);};
+
+    float resultFromFunc = pricePurchased1(3699);
+    float resultFromLambda = pricePurchased2(3699);
+    
+    cout &lt;&lt; resultFromFunc &lt;&lt; &quot; &quot; &lt;&lt; resultFromLambda &lt;&lt; endl;
+    
+    return 0;
+}
+</code></pre>
+
+<p>可以看出 lambda 和仿函数有着相同的内涵：<code>捕捉一些变量作为初始状态，并接受参数进行运算</code>。在 C++ 中，lambda 可以视为仿函数的一种 “语法糖”。</p>
+
+<p><img src="/pic/2019/2020-06-02-cpp_lambda.png" alt="pic" /></p>
+
+<p>但是 lambda 不是仿函数的完全替代者，由于 lambda 的捕捉列表的限制（仅仅能够捕捉到负作用域的非静态变量，而对于超出这个范围的变量是不能被捕捉的）。</p>
+
+<p>比如下面的代码段:</p>
+
+<pre><code class="language-cpp">int d = 0;
+int tryCapture() {
+ auto lambda_test = [d](){};
+</code></pre>
+
+<p>在g++中上面代码段能够编译通过，但会给出警告：<code>warning: capture of variable ‘d’ with non-automatic storage duration</code>，但是仿函数则不会有这个限制。</p>
+
+<p>总的来说，lambda 函数被设计的目的是就地书写、使用，是一种局部的封装与共享。而需要全局共享的代码逻辑，则需要用函数（无状态）或者仿函数（有状态）封装起来。</p>
+
+<h3 id="值捕获-v-s-引用捕获">值捕获 V.S. 引用捕获</h3>
+
+<p>使用 lambad 函数时，捕捉列表不同会导致不同的结果。对于按值方式传递的捕获列表，其传递的值在 lambda 函数定义的时候就已经决定了；而按引用捕获列表变量，其传递的值则等 lambda 函数调用时决定。</p>
+
+<blockquote>
+<p>注意最好不要使用 <code>[=]</code> 和 <code>[&amp;]</code> 默认捕获所有变量。</p>
+</blockquote>
+
+<p>对于默认引用捕获所有变量，有很大可能会出现 <code>悬挂引用（Dangling references）</code>，因为引用捕获不会延长引用的变量的生命周期：</p>
+
+<pre><code class="language-cpp">std::function&lt;int(int)&gt; add_x(int x)
+{
+    return [&amp;](int a) { return x + a; };
+}
+</code></pre>
+
+<p>因为参数 x 仅是一个临时变量，函数调用后就被销毁，但是返回的 lambda 表达式却引用了该变量，所以运行时会产生行为未定义的问题。</p>
+
+<p>使用默认传值方式默认捕获了 this 指针，如果 lambda的执行是异步的，很可能等 lambda 真正执行，this 所指向的对象已经被析构了，也会存在同样的问题。</p>
+
+<pre><code class="language-cpp">using functionCallback = std::function&lt;void(int)&gt;;
+class CSubObj(){
+  public:
+    CSubObj(){};
+    asyncFunc(functionCallback callback){
+        //异步操作
+    }
+};
+
+class CObj{
+  public: 
+    CObj() {};
+    void funcMethod1() {
+    //Some operations
+    };
+
+    void FuncMethod2(int param) {
+       _subObj-&gt;asyncFunc([=](param){
+            funcMethod1();
+       });
+    };
+    
+  private:
+    CSubObj _subObj;
+};
+</code></pre>
+
+<p>如以上代码所示，假设函数 <code>CSubObj::asyncFunc(functionCallback callback)</code> 实现中存在异步操作，可能 <code>CObj::FuncMethod2(int param)</code> 中 lambda 执行时 <code>CObj</code> 对象已经被析构了。</p>
+
+<p>这种问题的解决方案一般是在 lambda 实现的第一行就判断下是否 this 指针失效，如果失效了直接 return，代码段如下所示。</p>
+
+<pre><code class="language-cpp">#define RETURN_IF_DEAD(x) \
+    auto sharedThis = x.lock();       \
+    if (!sharedThis)                  \
+        return;
+     
+class CObj :public std::enable_shared_from_this&lt;CObj&gt;{
+  public: 
+    CObj() {};
+    void funcMethod1() {
+    //Some operations
+    };
+
+    void FuncMethod2(int param) {
+       _subObj-&gt;asyncFunc([weakThis = weak_from_this(), this](param){
+            RETURN_IF_DEAD(weakThis);
+            funcMethod1();
+       });
+    };
+    
+  private:
+    CSubObj _subObj;
+};
+</code></pre>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2020/06/02/cpp_lambda/">https://maodanp.github.io/2020/06/02/cpp_lambda/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
+
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                </ul>
+
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous disabled"><a href="#"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2020/05/31/cpp_raii/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        
+<aside>
+        <div class="toc panel panel-default hidden-xs hidden-sm affix-top" data-spy="affix" data-offset-top="125" data-offset-bottom="300">
+            <div class="panel-heading">
+                <h2 class="panel-title">Catalog</h2>
+            </div>
+
+            <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#lambda-介绍">lambda 介绍</a></li>
+<li><a href="#lambda-与-仿函数">lambda 与 仿函数</a></li>
+<li><a href="#值捕获-v-s-引用捕获">值捕获 V.S. 引用捕获</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+        </div>
+</aside>
+
+    </div>
+</div>
+
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2020  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
+</footer>
+
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+</html>
+
