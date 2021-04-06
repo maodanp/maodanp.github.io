@@ -72,13 +72,9 @@
 
             <div class="post-content">
                 <p>本篇主要描述 lambda 函数以及跟仿函数的关联，最后介绍 lambda 的使用陷阱。</p>
-
 <h3 id="lambda-介绍">lambda 介绍</h3>
-
 <p>lambda 表达式是 C++11 中引入的一项新技术，利用lambda表达式可以编写内嵌的匿名函数，用以替换独立函数或者函数对象，并且使代码更可读。lambda 函数的格式如下：</p>
-
 <p><code>[capture](parameters) mutable -&gt;return—type {statement}</code></p>
-
 <ul>
 <li><code>[capture]</code> 捕捉列表。能够捕捉上下文中的变量以供lambda函数使用。捕获只能用于可见（在创建lambda的作用域可见）的非static局部变量（包含形参）</li>
 <li><code>(parameters)</code> 参数列表。与普通函数的参数列表一致，若不需要参数传递，可以连同括号一起省略。</li>
@@ -86,9 +82,7 @@
 <li><code>-&gt;return-type</code> 返回类型。也可以省略该部分，让编译器对返回类型自动推导。</li>
 <li><code>{statements}</code> 函数体，跟普通函数一样。除了可以使用的形参之外，还可以使用所有捕获的变量。</li>
 </ul>
-
 <p>捕获列表由多个捕捉项组成，并且以逗号分隔。具体说来会有以下几种情况来捕获其所在作用域中的变量：</p>
-
 <ul>
 <li><code>[]</code> 默认不捕获任何变量；</li>
 <li><code>[=]</code> 默认以值捕获所有变量（ 包括 <code>this</code> ）；</li>
@@ -99,133 +93,107 @@
 <li><code>[&amp;, var]</code> 默认以引用捕获所有变量，但是 var 是例外，通过值捕获；</li>
 <li><code>[this]</code> 通过值传递方式捕获当前的 this 指针。</li>
 </ul>
-
 <h3 id="lambda-与-仿函数">lambda 与 仿函数</h3>
-
 <p>在 C++11 之前，我们在使用 STL 算法时，通常会使用到函数对象或者仿函数（ functor ）。仿函数简单而言就是重新定义了成员函数 <code>operator()</code> 的一种自定义类型对象。</p>
-
 <p>下面代码显示的例子分别使用了仿函数和 lambda 两种方式计算产品的价格。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
 
-<pre><code class="language-cpp">#include &lt;iostream&gt;
-using namespace std;
-
-class AirportPrice{
-private:
- float _dutyFree;
-public:
- AirportPrice(float rate): _dutyFree(rate){}
- float operator()(float price){
-    return price*(1-_dutyFree/100);
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AirportPrice</span>{
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+ <span style="color:#66d9ef">float</span> _dutyFree;
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+ AirportPrice(<span style="color:#66d9ef">float</span> rate)<span style="color:#f92672">:</span> _dutyFree(rate){}
+ <span style="color:#66d9ef">float</span> <span style="color:#a6e22e">operator</span>()(<span style="color:#66d9ef">float</span> price){
+    <span style="color:#66d9ef">return</span> price<span style="color:#f92672">*</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">-</span>_dutyFree<span style="color:#f92672">/</span><span style="color:#ae81ff">100</span>);
  }
 };
 
-int main()
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
 {
-    float tax_rate = 5.5f;
+    <span style="color:#66d9ef">float</span> tax_rate <span style="color:#f92672">=</span> <span style="color:#ae81ff">5.5f</span>;
     AirportPrice pricePurchased1(tax_rate);
 
-    auto pricePurchased2 = [tax_rate](float price){return price*(1-tax_rate/100);};
+    <span style="color:#66d9ef">auto</span> pricePurchased2 <span style="color:#f92672">=</span> [tax_rate](<span style="color:#66d9ef">float</span> price){<span style="color:#66d9ef">return</span> price<span style="color:#f92672">*</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">-</span>tax_rate<span style="color:#f92672">/</span><span style="color:#ae81ff">100</span>);};
 
-    float resultFromFunc = pricePurchased1(3699);
-    float resultFromLambda = pricePurchased2(3699);
+    <span style="color:#66d9ef">float</span> resultFromFunc <span style="color:#f92672">=</span> pricePurchased1(<span style="color:#ae81ff">3699</span>);
+    <span style="color:#66d9ef">float</span> resultFromLambda <span style="color:#f92672">=</span> pricePurchased2(<span style="color:#ae81ff">3699</span>);
     
-    cout &lt;&lt; resultFromFunc &lt;&lt; &quot; &quot; &lt;&lt; resultFromLambda &lt;&lt; endl;
+    cout <span style="color:#f92672">&lt;&lt;</span> resultFromFunc <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34; &#34;</span> <span style="color:#f92672">&lt;&lt;</span> resultFromLambda <span style="color:#f92672">&lt;&lt;</span> endl;
     
-    return 0;
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-</code></pre>
-
-<p>可以看出 lambda 和仿函数有着相同的内涵：<code>捕捉一些变量作为初始状态，并接受参数进行运算</code>。在 C++ 中，lambda 可以视为仿函数的一种 “语法糖”。</p>
-
-<p><img src="/pic/2020/2020-06-02-cpp_lambda.png" alt="pic" /></p>
-
+</code></pre></div><p>可以看出 lambda 和仿函数有着相同的内涵：<code>捕捉一些变量作为初始状态，并接受参数进行运算</code>。在 C++ 中，lambda 可以视为仿函数的一种 “语法糖”。</p>
+<p><img src="/pic/2020/2020-06-02-cpp_lambda.png" alt="pic"></p>
 <p>但是 lambda 不是仿函数的完全替代者，由于 lambda 的捕捉列表的限制（仅仅能够捕捉到负作用域的非静态变量，而对于超出这个范围的变量是不能被捕捉的）。</p>
-
 <p>比如下面的代码段:</p>
-
-<pre><code class="language-cpp">int d = 0;
-int tryCapture() {
- auto lambda_test = [d](){};
-</code></pre>
-
-<p>在g++中上面代码段能够编译通过，但会给出警告：<code>warning: capture of variable ‘d’ with non-automatic storage duration</code>，但是仿函数则不会有这个限制。</p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> d <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">tryCapture</span>() {
+ <span style="color:#66d9ef">auto</span> lambda_test <span style="color:#f92672">=</span> [d](){};
+</code></pre></div><p>在g++中上面代码段能够编译通过，但会给出警告：<code>warning: capture of variable ‘d’ with non-automatic storage duration </code>，但是仿函数则不会有这个限制。</p>
 <p>总的来说，lambda 函数被设计的目的是就地书写、使用，是一种局部的封装与共享。而需要全局共享的代码逻辑，则需要用函数（无状态）或者仿函数（有状态）封装起来。</p>
-
-<h3 id="值捕获-v-s-引用捕获">值捕获 V.S. 引用捕获</h3>
-
+<h3 id="值捕获-vs-引用捕获">值捕获 V.S. 引用捕获</h3>
 <p>使用 lambad 函数时，捕捉列表不同会导致不同的结果。对于按值方式传递的捕获列表，其传递的值在 lambda 函数定义的时候就已经决定了；而按引用捕获列表变量，其传递的值则等 lambda 函数调用时决定。</p>
-
 <blockquote>
 <p>注意最好不要使用 <code>[=]</code> 和 <code>[&amp;]</code> 默认捕获所有变量。</p>
 </blockquote>
-
 <p>对于默认引用捕获所有变量，有很大可能会出现 <code>悬挂引用（Dangling references）</code>，因为引用捕获不会延长引用的变量的生命周期：</p>
-
-<pre><code class="language-cpp">std::function&lt;int(int)&gt; add_x(int x)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#f92672">::</span>function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>(<span style="color:#66d9ef">int</span>)<span style="color:#f92672">&gt;</span> add_x(<span style="color:#66d9ef">int</span> x)
 {
-    return [&amp;](int a) { return x + a; };
+    <span style="color:#66d9ef">return</span> [<span style="color:#f92672">&amp;</span>](<span style="color:#66d9ef">int</span> a) { <span style="color:#66d9ef">return</span> x <span style="color:#f92672">+</span> a; };
 }
-</code></pre>
-
-<p>因为参数 x 仅是一个临时变量，函数调用后就被销毁，但是返回的 lambda 表达式却引用了该变量，所以运行时会产生行为未定义的问题。</p>
-
+</code></pre></div><p>因为参数 x 仅是一个临时变量，函数调用后就被销毁，但是返回的 lambda 表达式却引用了该变量，所以运行时会产生行为未定义的问题。</p>
 <p>使用默认传值方式默认捕获了 this 指针，如果 lambda的执行是异步的，很可能等 lambda 真正执行，this 所指向的对象已经被析构了，也会存在同样的问题。</p>
-
-<pre><code class="language-cpp">using functionCallback = std::function&lt;void(int)&gt;;
-class CSubObj(){
-  public:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">using</span> functionCallback <span style="color:#f92672">=</span> std<span style="color:#f92672">::</span>function<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">void</span>(<span style="color:#66d9ef">int</span>)<span style="color:#f92672">&gt;</span>;
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CSubObj</span>(){
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
     CSubObj(){};
     asyncFunc(functionCallback callback){
-        //异步操作
-    }
+        <span style="color:#75715e">//异步操作
+</span><span style="color:#75715e"></span>    }
 };
 
-class CObj{
-  public: 
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CObj</span>{
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span> 
     CObj() {};
-    void funcMethod1() {
-    //Some operations
-    };
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">funcMethod1</span>() {
+    <span style="color:#75715e">//Some operations
+</span><span style="color:#75715e"></span>    };
 
-    void FuncMethod2(int param) {
-       _subObj-&gt;asyncFunc([=](param){
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">FuncMethod2</span>(<span style="color:#66d9ef">int</span> param) {
+       _subObj<span style="color:#f92672">-&gt;</span>asyncFunc([<span style="color:#f92672">=</span>](param){
             funcMethod1();
        });
     };
     
-  private:
+  <span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
     CSubObj _subObj;
 };
-</code></pre>
-
-<p>如以上代码所示，假设函数 <code>CSubObj::asyncFunc(functionCallback callback)</code> 实现中存在异步操作，可能 <code>CObj::FuncMethod2(int param)</code> 中 lambda 执行时 <code>CObj</code> 对象已经被析构了。</p>
-
+</code></pre></div><p>如以上代码所示，假设函数 <code>CSubObj::asyncFunc(functionCallback callback)</code> 实现中存在异步操作，可能 <code>CObj::FuncMethod2(int param)</code> 中 lambda 执行时 <code>CObj</code> 对象已经被析构了。</p>
 <p>这种问题的解决方案一般是在 lambda 实现的第一行就判断下是否 this 指针失效，如果失效了直接 return，代码段如下所示。</p>
-
-<pre><code class="language-cpp">#define RETURN_IF_DEAD(x) \
-    auto sharedThis = x.lock();       \
-    if (!sharedThis)                  \
-        return;
-     
-class CObj :public std::enable_shared_from_this&lt;CObj&gt;{
-  public: 
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#define RETURN_IF_DEAD(x) \
+</span><span style="color:#75715e">    auto sharedThis = x.lock();       \
+</span><span style="color:#75715e">    if (!sharedThis)                  \
+</span><span style="color:#75715e">        return;
+</span><span style="color:#75715e"></span>     
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CObj</span> <span style="color:#f92672">:</span><span style="color:#66d9ef">public</span> std<span style="color:#f92672">::</span>enable_shared_from_this<span style="color:#f92672">&lt;</span>CObj<span style="color:#f92672">&gt;</span>{
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span> 
     CObj() {};
-    void funcMethod1() {
-    //Some operations
-    };
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">funcMethod1</span>() {
+    <span style="color:#75715e">//Some operations
+</span><span style="color:#75715e"></span>    };
 
-    void FuncMethod2(int param) {
-       _subObj-&gt;asyncFunc([weakThis = weak_from_this(), this](param){
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">FuncMethod2</span>(<span style="color:#66d9ef">int</span> param) {
+       _subObj<span style="color:#f92672">-&gt;</span>asyncFunc([weakThis <span style="color:#f92672">=</span> weak_from_this(), <span style="color:#66d9ef">this</span>](param){
             RETURN_IF_DEAD(weakThis);
             funcMethod1();
        });
     };
     
-  private:
+  <span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
     CSubObj _subObj;
 };
-</code></pre>
+</code></pre></div>
             </div>
             
             <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
@@ -279,27 +247,8 @@ class CObj :public std::enable_shared_from_this&lt;CObj&gt;{
         </article>
     </div>
     <div class="col-md-4">
-        
-<aside>
-        <div class="toc panel panel-default hidden-xs hidden-sm affix-top" data-spy="affix" data-offset-top="125" data-offset-bottom="300">
-            <div class="panel-heading">
-                <h2 class="panel-title">Catalog</h2>
-            </div>
-
-            <nav id="TableOfContents">
-<ul>
-<li>
-<ul>
-<li>
-<ul>
-<li><a href="#lambda-介绍">lambda 介绍</a></li>
-<li><a href="#lambda-与-仿函数">lambda 与 仿函数</a></li>
-<li><a href="#值捕获-v-s-引用捕获">值捕获 V.S. 引用捕获</a></li>
-</ul></li>
-</ul></li>
-</ul>
-</nav>
-        </div>
+        <aside>
+    
 </aside>
 
     </div>
@@ -309,7 +258,7 @@ class CObj :public std::enable_shared_from_this&lt;CObj&gt;{
 <hr>
 
 <footer class="container copy">
-    <p>&copy; 2020  Danping&#39;s blog </p>
+    <p>&copy; 2021  Danping&#39;s blog </p>
 	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
 </footer>
 
