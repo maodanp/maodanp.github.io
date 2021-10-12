@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="C&#43;&#43;11 的一个重要特性就是自动类型推导（auto type dedection)，通过引入 auto 和 decltype 关键字实现了类型推导，不仅能够方便的获取复杂类型，还能够简化书写，提高编码效率。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="C&#43;&#43; 中 auto &amp; decltype - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+
+<title>
+    
+    C&#43;&#43; 中 auto &amp; decltype
+    
+</title>
+
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
+
+
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2020年06月20日 
+                </div>
+                <h1 class="post-title">C&#43;&#43; 中 auto &amp; decltype</h1>
+            </header>
+
+            <div class="post-content">
+                <p>C++11 的一个重要特性就是自动类型推导（auto type dedection)，通过引入 auto 和 decltype 关键字实现了类型推导，不仅能够方便的获取复杂类型，还能够简化书写，提高编码效率。</p>
+<h3 id="自动类型推导">自动类型推导</h3>
+<p>除了简化代码，自动类型推导还可以避免对类型的 “硬编码”，也就是能够自适应表达式的类型。比如下面的语句，如果把 map 改成 unordered_map，那么后面的代码不需要任何改动。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#f92672">::</span>map<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span>, std<span style="color:#f92672">::</span>string<span style="color:#f92672">&gt;</span> m <span style="color:#f92672">=</span> {{<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#39;a&#39;</span>}, {<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#39;b&#39;</span>}};
+<span style="color:#66d9ef">auto</span> iter <span style="color:#f92672">=</span> m.begin();
+</code></pre></div><h3 id="认识-auto">认识 auto</h3>
+<p>auto 的 “自动推导” 能力只能用在 “初始化” 的场合。包括<strong>赋值初始化</strong> 或者<strong>花括号初始化</strong> （ Initializer list ），变量右边必须是一个表达式，如果纯是一个变量声明，则无法使用 auto 。</p>
+<p>auto 的推导规则有些复杂，跟函数模板参数的自动推导有相似之处（ 具体函数模板参数自动推导规则可以参考《Effective Modern C++》条例1 ）。总结的规则大概两条：</p>
+<ol>
+<li>
+<p>当声明为指针或者引用时，auto 的推导结果将保持初始化表达式的 cv 属性。</p>
+</li>
+<li>
+<p>当 auto 不声明为指针或者引用时，auto 的推导结果和初始化表达式会抛弃引用和 cv 限定符（ cv-qualifier，const 和volatile 限定符的统称 ）后的类型一致。</p>
+</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> x <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">auto</span> <span style="color:#f92672">*</span> a <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>x; <span style="color:#75715e">// auto 推导为 int
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">auto</span> <span style="color:#f92672">&amp;</span> c <span style="color:#f92672">=</span> x;  <span style="color:#75715e">// auto 推导为 int
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">auto</span> d <span style="color:#f92672">=</span> c;    <span style="color:#75715e">// auto 推导为 int (表达式带有引用类型，auto 把引用类型抛弃，直接推导成原始类型 int)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span> e <span style="color:#f92672">=</span> x; <span style="color:#75715e">// auto 推导为 int
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">auto</span> f <span style="color:#f92672">=</span> e; <span style="color:#75715e">// auto 推导为 int  (表达式带有 const 类型，auto 把 const 类型抛弃，直接推导成原始类型 int)
+</span></code></pre></div><p>auto 的最佳实践还用于 “range-based for”，不需要关心容器元素类型，迭代器返回值和首末位置，就能轻松完成遍历操作。为了保证效率，最好使用 “const auto&amp;” 或 “auto&amp;” 。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> v <span style="color:#f92672">=</span> {<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>};
+<span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">auto</span><span style="color:#f92672">&amp;</span> i : v)
+{
+  <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>}
+</code></pre></div><h3 id="认识-decltype">认识 decltype</h3>
+<p>decltype 与 auto 关键字一样，用于进行编译时类型推导，不过它与 auto 还是有一些区别的。decltype 的类型推导并不是像 auto 一样是从变量声明的初始化表达式获得变量的类型，而是总是<strong>以一个普通表达式作为参数</strong>，返回该表达式的类型,而且 decltype 并不会对表达式进行求值。</p>
+<ul>
+<li><code>decltype + 变量</code>：返回变量的类型（包括 const 和引用）。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">int</span> ci <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, <span style="color:#f92672">&amp;</span>cj <span style="color:#f92672">=</span> ci;
+<span style="color:#66d9ef">decltype</span>(ci) x <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// x 类型是 const int
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span>(cj) x <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; <span style="color:#75715e">// x 类型是 const int&amp;
+</span></code></pre></div><ul>
+<li><code>decltype + 表达式</code>：返回表达式结果对应的类型。结果是左值的表达式得到类型的引用；结果是右值的表达式得到类型。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">42</span>;
+<span style="color:#66d9ef">decltype</span>(r <span style="color:#f92672">+</span> <span style="color:#ae81ff">0</span>) b; <span style="color:#75715e">// r + 0 返回右值，b 是一个 int 类型
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span>(<span style="color:#f92672">*</span>p) c <span style="color:#f92672">=</span> i; <span style="color:#75715e">//c 是一个 int&amp;
+</span><span style="color:#75715e"></span>
+
+<span style="color:#66d9ef">decltype</span> ((i))var6 <span style="color:#f92672">=</span> i;           <span style="color:#75715e">//int&amp;  因为（i）是一个左值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span> (true <span style="color:#f92672">?</span> i : i) var7 <span style="color:#f92672">=</span> i; <span style="color:#75715e">//int&amp;  条件表达式返回左值。
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span> (<span style="color:#f92672">++</span>i) var8 <span style="color:#f92672">=</span> i;          <span style="color:#75715e">//int&amp;  ++i返回i的左值。
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span>(arr[<span style="color:#ae81ff">5</span>]) var9 <span style="color:#f92672">=</span> i;        <span style="color:#75715e">//int&amp;  []操作返回左值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span>(<span style="color:#f92672">*</span>ptr)var10 <span style="color:#f92672">=</span> i;          <span style="color:#75715e">//int&amp;  *操作返回左值
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">decltype</span>(<span style="color:#e6db74">&#34;hello&#34;</span>)var11 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;hello&#34;</span>; <span style="color:#75715e">//const char(&amp;)[6]  字符串字面常量为左值，且为const左值。
+</span></code></pre></div><ul>
+<li><code>decltype + 函数</code>：返回对应的函数类型，不会自动转换成相应的函数指针。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> (<span style="color:#f92672">*</span>signal(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">void</span>(<span style="color:#f92672">*</span> func)(<span style="color:#66d9ef">int</span>)))(<span style="color:#66d9ef">int</span>);
+<span style="color:#66d9ef">using</span> sig_func_ptr_t <span style="color:#f92672">=</span> <span style="color:#66d9ef">decltype</span>(<span style="color:#f92672">&amp;</span>signal);
+</code></pre></div><ul>
+<li>与 using/typedef 结合使用，用于定义类型</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">using</span> size_t <span style="color:#f92672">=</span> <span style="color:#66d9ef">decltype</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#ae81ff">0</span>));
+<span style="color:#66d9ef">using</span> nullptr_t <span style="color:#f92672">=</span> <span style="color:#66d9ef">decltype</span>(<span style="color:#66d9ef">nullptr</span>);
+
+vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span> <span style="color:#f92672">&gt;</span>vec;
+<span style="color:#66d9ef">typedef</span> <span style="color:#a6e22e">decltype</span>(vec.begin()) vectype;
+<span style="color:#66d9ef">for</span>(vectype i <span style="color:#f92672">=</span> vec.begin(); i <span style="color:#f92672">!=</span> vec.end(); i<span style="color:#f92672">++</span>)
+{
+   <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>}
+</code></pre></div><ul>
+<li>泛型编程中结合 auto，用于追踪函数的返回值类型</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> _Tx, <span style="color:#66d9ef">typename</span> _Ty<span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">auto</span> multiply(_Tx x, _Ty y)<span style="color:#f92672">-&gt;</span><span style="color:#66d9ef">decltype</span>(_Tx<span style="color:#f92672">*</span>_Ty)
+{
+    <span style="color:#66d9ef">return</span> x<span style="color:#f92672">*</span>y;
+}
+</code></pre></div>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2020/06/20/cpp_auto_type/">https://maodanp.github.io/2020/06/20/cpp_auto_type/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
+
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/c&#43;&#43;/">
+                            <i class="fa fa-tags"></i>
+                            C&#43;&#43;
+                        </a>
+                    </li>
+                    
+                </ul>
+
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"><li id="li-rels"><a href="/2020/06/11/cpp_move/">C&#43;&#43; 右值引用和移动语义</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年06月11日)</span></li><li id="li-rels"><a href="/2020/06/02/cpp_lambda/">C&#43;&#43; lambda 函数</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年06月02日)</span></li><li id="li-rels"><a href="/2020/05/31/cpp_raii/">C&#43;&#43; 内存分配与 RAII</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年05月31日)</span></li></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous"><a href="/2021/01/18/cpp_observer_subject/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2020/06/11/cpp_move/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        <aside>
+    
+</aside>
+
+    </div>
+</div>
+
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2021  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
+</footer>
+
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+</html>
+

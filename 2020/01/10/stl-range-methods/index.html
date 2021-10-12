@@ -75,16 +75,16 @@
 <h3 id="区间函数示例">区间函数示例</h3>
 <p>示例1：给定 v1 和 v2 两个向量，使得 v1 的内容和 v2 的后半部分相同。</p>
 <p>方法一，使用单元素成员函数，依次将 v2 的元素 push back 到 v1 中</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">v1.clear();
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">v1.clear();
 <span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">auto</span> iter <span style="color:#f92672">=</span> v2.begin()<span style="color:#f92672">+</span>v2.size()<span style="color:#f92672">/</span><span style="color:#ae81ff">2</span>; iter <span style="color:#f92672">!=</span> v2.end(); iter <span style="color:#f92672">++</span>)
 {
   v1.push_back(<span style="color:#f92672">*</span>iter);
 }
 </code></pre></div><p>方法二，使用区间成员函数 assign</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">v1.assign(v2.begin() <span style="color:#f92672">+</span> v2.size()<span style="color:#f92672">/</span><span style="color:#ae81ff">2</span>, v2.end())
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">v1.assign(v2.begin() <span style="color:#f92672">+</span> v2.size()<span style="color:#f92672">/</span><span style="color:#ae81ff">2</span>, v2.end())
 </code></pre></div><p>示例2：如何将一个 int 数组拷贝到一个 vector 的前端</p>
 <p>方法一，通过循环依次将数组中的元素 insert 到 vector</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> data[numValues];
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> data[numValues];
 vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> v;
 <span style="color:#75715e">//...
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">auto</span> insertLoc <span style="color:#f92672">=</span> v.begin();
@@ -94,47 +94,47 @@ vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</sp
   insertLoc<span style="color:#f92672">++</span>;
 }
 </code></pre></div><p>方法二，使用 vector 的区间 insert 函数</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> data[numValues];
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> data[numValues];
 vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> v;
 v.insert(v1.begin(), data, data<span style="color:#f92672">+</span>numValues);
 </code></pre></div><p>通过以上两个示例，明显可以感觉到使用区间函数是非常的方便，而且意图清晰，代码更加的直接。而且使用区间函数往往比与之对应的单元素成员函数更加高效。</p>
 <h3 id="区间删除-erase-结合-remove-算法">区间删除 erase 结合 remove 算法</h3>
 <p>如何删除 vector 容器中指定值的元素? 第一个想到的是 vector 提供的 erase 方法，但是该方法只能删除特定位置或者某个区间的元素值，那怎么删除指定值得元素呢，这里就要结合算法 remove 去实现了。</p>
 <p>先看下 remove 声明如下，remove 需要一对迭代器来指定所要进行操作的元素区间：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span><span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ForwardIterator</span>, <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">T</span><span style="color:#f92672">&gt;</span>
 ForwardIterator remove(ForwardIterator first, ForwardIterator last, <span style="color:#66d9ef">const</span> T<span style="color:#f92672">&amp;</span> value);
 </code></pre></div><p>因为从容器中删除元素的唯一方法就是调用该容器的成员函数，而 remove 并不知道它操作的元素所在的容器，所以 remove 不可能从容器中删除元素。remove 不是真正意义上的删除元素，只是返回一个指向新的区间结尾的迭代器。</p>
 <p>在内部，remove 遍历整个区间，用需要保留的元素的值覆盖掉要被删除的元素的值。为了删除这些元素，需要调用区间形式的 erase 方法从新的逻辑结尾一直到原区间的结尾都删除。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> v;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> v;
 v.erase(remove(v.begin(), v.end(), <span style="color:#ae81ff">99</span>), v.end);
 </code></pre></div><p>但是有一个例外，就是 list 的 remove 成员函数，这是 STL 中唯一一个名为 remove 并且确实删除了容器中元素的函数：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> lst;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">list<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> lst;
 <span style="color:#75715e">//...
 </span><span style="color:#75715e"></span>
 lst.remove(<span style="color:#ae81ff">99</span>); <span style="color:#75715e">//删除所有值为99的元素，并且list的大小也会改变
 </span></code></pre></div><h3 id="区间函数分类">区间函数分类</h3>
 <h4 id="区间创建">区间创建</h4>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">container<span style="color:#f92672">::</span>container(InputIterator begin, InputIterator end);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">container<span style="color:#f92672">::</span>container(InputIterator begin, InputIterator end);
 </code></pre></div><h4 id="区间插入">区间插入</h4>
 <p>所有标准序列容器（vector, string, deque, list）都提供了如下形式的 insert:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>insert(iterator position,  <span style="color:#75715e">// 在何处插入区间
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>insert(iterator position,  <span style="color:#75715e">// 在何处插入区间
 </span><span style="color:#75715e"></span>                     InputIterator begin, 
                      InputIterator end);
 </code></pre></div><p>关联容器（set, multiset, map, multimap）利用比较函数来决定元素该插入何处，它们提供了一个省去position参数的函数原型：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>insert(InputIterator begin, InputIterator end);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>insert(InputIterator begin, InputIterator end);
 </code></pre></div><p>对于标准序列容器，当看到使用 push_front 或者 push_back 循环调用时，或者 front_inserter 或者 back_inserter 被当做参数传递给 copy 函数时，你会发现在这里区间形式的 insert 可能是更好的选择。</p>
 <h4 id="区间删除">区间删除</h4>
 <p>所有的标准序列容器都提供了区间形式的删除操作，但对于序列和关联容器，其返回值有所不同。序列容器提供了这样的形式：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">iterator container<span style="color:#f92672">::</span>erase(iterator begin, iterator end);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">iterator container<span style="color:#f92672">::</span>erase(iterator begin, iterator end);
 </code></pre></div><p>而关联容器则提供了如下形式：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>erase(iterator begin, iterator end);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>erase(iterator begin, iterator end);
 </code></pre></div><p>对于 vector 和 string 来说，内存会反复分配（对 erase，会是反复的释放），但是当元素数目减少时却不会自动减少，这个时候就需要使用 swap 来去除多余容量了。比如：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CTest</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CTest</span>
 vector<span style="color:#f92672">&lt;</span>CTest<span style="color:#f92672">&gt;</span> cTestVec;
 vector<span style="color:#f92672">&lt;</span>CTest<span style="color:#f92672">&gt;</span>(cTestVec).swap(cTestVec);
 </code></pre></div><p>这里表达式 vector<!-- raw HTML omitted -->(cTestVec) 创建一个临时的向量, 它是cTestVec的拷贝，然而 vector 的拷贝构造函数置为所拷贝的元素分配所需的内存，所以这个临时向量没有多余的容量。然后将临时向量中的数据和 cTestVec 中的数据做swap 。</p>
 <h4 id="区间赋值">区间赋值</h4>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>assign(iterator begin, iterator end);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> container<span style="color:#f92672">::</span>assign(iterator begin, iterator end);
 </code></pre></div><p>所有容器也都提供了区间形式的 assign 。</p>
 <h3 id="参考阅读">参考阅读</h3>
 <p>《Effective STL》 - 第5条，32条</p>

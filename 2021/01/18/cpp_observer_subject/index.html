@@ -88,7 +88,7 @@
 </ul>
 <h3 id="subject类在c中的模板化">Subject类在C++中的模板化</h3>
 <p>对于观察者模式中 Subjet 的 C++ 实现，主要就是上面类图中三个方法的实现：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Subject</span>{
   <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">addObserver</span>(observer);
   <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">removeObserver</span>(observer);
@@ -101,10 +101,10 @@
 <li>关于 notify 的实现，怎么让 ConcreteSubject 能够让 Subject 触发不同的事件（考虑到不同事件的参数不同）</li>
 </ol>
 <p>关于第3点， 我们可以利用 C++11 的可变模板参数：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> event, <span style="color:#66d9ef">typename</span>... Args<span style="color:#f92672">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> event, <span style="color:#66d9ef">typename</span>... Args<span style="color:#f92672">&gt;</span>
 </code></pre></div><p>其中，<strong>event</strong> 是具体关注的事件，<strong>Args</strong> 是可变参数，对应 event 的可变参数。这样对于 ConcreteSubject 而言，notify 时只需要传入对应接口名称以及对应实参。</p>
 <p>有了以上考虑，就可以写出一个简单的基于模板的Subject的类实现了</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> ObserverT<span style="color:#f92672">&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">typename</span> ObserverT<span style="color:#f92672">&gt;</span>
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Subject</span>
 {
 <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
@@ -165,7 +165,7 @@
     
 }
 </code></pre></div><p>有了上面 Subject的模板类，其他几个类也就可以写了：</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Observer 接口
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Observer 接口
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">IObserver</span>
 {
 <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
@@ -269,7 +269,7 @@
                         <li><a href="/post/">All Posts</a></li>
 
                         
-                        <li class="next"><a href="/2020/06/11/cpp_move/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        <li class="next"><a href="/2020/06/20/cpp_auto_type/">Next <span aria-hidden="true">&rarr;</span></a></li>
                         
 
                     </ul>
