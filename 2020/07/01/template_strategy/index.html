@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="本篇将分别介绍 Template 与 Strategy 模式。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="Template 与 Strategy 模式比较 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+
+<title>
+    
+    Template 与 Strategy 模式比较
+    
+</title>
+
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
+
+
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2020年07月01日 
+                </div>
+                <h1 class="post-title">Template 与 Strategy 模式比较</h1>
+            </header>
+
+            <div class="post-content">
+                <p>本篇将分别介绍 Template 与 Strategy 模式。</p>
+<h3 id="template-模式">Template 模式</h3>
+<p>Template 模式通常应用于一种场景：对于某一个业务逻辑的算法实现在不同的对象中有不同的实现，但是逻辑（算法）框架是相同的，Template 模式采用继承的方式实现了这一点：将逻辑（算法）框架放在抽象基类中，并定义好细节的接口，子类中实现细节。</p>
+<p>Template 模式在 GoF 的《设计模式》中定义如下：</p>
+<blockquote>
+<p>Define the skeleton of an algorithm in an operation, deferring some steps to subclasses. Template Method lets subclasses redefine certain steps of an algorithm without changing the algorithm’s structure.</p>
+</blockquote>
+<p>翻译成中文就是：Template 模式就是在一个方法中定义一个算法骨架，并将某些步骤推迟到子类中实现。Teamplate 模式可以让子类在不改变算法整体结构的情况下，重新定义算法中的某些步骤。</p>
+<h4 id="template-模式实现">Template 模式实现</h4>
+<p><img src="/pic/2020/2020-07-01-dp-template.png" alt="pic"></p>
+<p>代码实现比较简单，如下所以，其中，algorithmInterface1() 和 algorithmInterface2() 定义为纯虚函数，是为了强迫子类去实现（这个也不是必须的，这两个函数也可以在子类中实现，提供通用的算法）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AbstractClass</span> {
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">void</span> doActionForTemplateMethod() {
+    <span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>    algorithmInterface1();
+    
+    <span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>    algorithmInterface2();
+  }
+  
+  <span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface1</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+  <span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface2</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+};
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ConcreteClass1</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> AbstractClass {
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  	<span style="color:#66d9ef">void</span> algorithmInterface1() <span style="color:#66d9ef">override</span> {
+        <span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>		}
+  
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface2</span>() <span style="color:#66d9ef">override</span> {
+        <span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>		}
+};
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ConcreteClass2</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">public</span> AbstractClass {
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  	<span style="color:#66d9ef">void</span> algorithmInterface1() <span style="color:#66d9ef">override</span> {
+        <span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>		}
+  
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface2</span>() <span style="color:#66d9ef">override</span> {
+        <span style="color:#75715e">//....
+</span><span style="color:#75715e"></span>		}
+};
+</code></pre></div><h4 id="template-模式的作用">Template 模式的作用</h4>
+<p><strong>复用</strong>：Template 模式把一个算法中不变的流程抽象到父类的模板方法 doActionForTemplateMethod() 中，将可变的部分 algorithmInterface1()、algorithmInterface2() 留给子类 ConcreteClass1、ConcreteClass2 来实现，所有的子类都可以复用父类中模板方法定义的流程代码。</p>
+<p><strong>扩展</strong>：框架通过 Template 模式提供功能扩展点，让框架用户可以在不修改框架源码的情况下，基于扩展点定制化框架功能。</p>
+<p>Template 模式实际上就是利用面向对象中多态的概念实现算法实现细节和高层接口的松耦合。但是由于继承是一种强约束行的条件，这也给 Template 模式带来了许多不方便的地方。</p>
+<h3 id="strategy-模式">Strategy 模式</h3>
+<p>Strategy 模式和 Template 模式要解决的问题是相同的，都是为了给业务逻辑（算法）具体实现和抽象接口之间解耦。Strategy 模式将逻辑（算法）封装在一个类（Context）里面，通过组合的方式将具体算法的实现在组合对象中实现，再通过委托的方式将抽象接口的实现委托给组合对象实现。</p>
+<p>Strategy 模式在 GoF 的《设计模式》中定义如下：</p>
+<blockquote>
+<p>Define a family of algorithms, encapsulate each one, and make them interchangeable. Strategy lets the algorithm vary independently from clients that use it.</p>
+</blockquote>
+<p>翻译成中文就是：定义一族算法类，将每个算法分别封装起来，让他们可以相互替换。Strategy 模式可以使得算法的变化独立于使用它们的客户端（使用算法的代码）。</p>
+<h4 id="strategy-模式实现">Strategy 模式实现</h4>
+<p><img src="/pic/2020/2020-07-01-dp-strategy.png" alt="pic"></p>
+<p>基于上面的 Strategy 模式类图，我们可以从定义、创建、使用这三个方面描述 Strategy 模式。</p>
+<p><strong>Strategy 类的定义</strong></p>
+<p>所有的 Strategy 类都实现相同的接口，客户端代码基于接口而非实现编程，可以灵活地替换不同的策略。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Strategy</span>{
+  <span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+}
+
+<span style="color:#66d9ef">public</span> ConcreteStrategyA {
+  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface</span>() <span style="color:#66d9ef">override</span> {
+    <span style="color:#75715e">// 具体算法....
+</span><span style="color:#75715e"></span>  }
+}
+
+<span style="color:#66d9ef">public</span> ConcreteStrategyB {
+  <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">algorithmInterface</span>() <span style="color:#66d9ef">override</span> {
+    <span style="color:#75715e">// 具体算法....
+</span><span style="color:#75715e"></span>  }
+};
+</code></pre></div><p><strong>Strategy 类的创建</strong></p>
+<p>Strategy 模式包含一组策略，在使用它们的时候，一般会通过类型来判断创建哪个策略来使用。为了封装创建逻辑，我们需要对客户端代码屏蔽创建细节。我们可以根据 type 创建策略的逻辑剥离出来，放在工厂类中：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Strategy</span>;
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">StrategyFactory</span> {
+ <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  <span style="color:#66d9ef">static</span> shared_ptr<span style="color:#f92672">&lt;</span>Strategy<span style="color:#f92672">&gt;</span> getStrategy(std<span style="color:#f92672">::</span>string type) {
+    <span style="color:#66d9ef">if</span> (type <span style="color:#f92672">==</span> null <span style="color:#f92672">||</span> type.isEmpty()) {
+		  	<span style="color:#66d9ef">return</span> null;
+    }
+
+    <span style="color:#66d9ef">if</span> (type.equals(<span style="color:#e6db74">&#34;A&#34;</span>)) {
+      <span style="color:#66d9ef">return</span> std<span style="color:#f92672">::</span>make_shared<span style="color:#f92672">&lt;</span>ConcreteStrategyA<span style="color:#f92672">&gt;</span>();
+    } <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">if</span> (type.equals(<span style="color:#e6db74">&#34;B&#34;</span>)) {
+      <span style="color:#66d9ef">return</span> std<span style="color:#f92672">::</span>make_shared<span style="color:#f92672">&lt;</span>ConcreteStrategyB<span style="color:#f92672">&gt;</span>();
+    }
+
+    <span style="color:#66d9ef">return</span> null;
+  }
+};
+</code></pre></div><p><strong>Strategy 类的使用</strong></p>
+<p>一般客户端代码是在运行时动态确定使用哪种策略，这里的运行时动态是指，我们事先不知道使用哪种策略，而是在程序运行期间，根据程序运行结果来动态确定使用哪种策略。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">public</span> Context {
+  <span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+  	Context(Strategy strategy) 
+    <span style="color:#f92672">:</span> mStrategyPtr()
+    {
+    }
+  
+    <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">doAction</span>(){
+      <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>      mStrategyPtr<span style="color:#f92672">-&gt;</span>algorithmInterface();
+      <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>    }
+    
+  <span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+    std<span style="color:#f92672">::</span>shared_prt<span style="color:#f92672">&lt;</span>Strategy<span style="color:#f92672">&gt;</span> mStrategyPtr;
+};
+
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+{
+  std<span style="color:#f92672">::</span>string type;
+  <span style="color:#75715e">// type 值根据用户输入、配置、计算结果动态设定
+</span><span style="color:#75715e"></span>  
+  <span style="color:#66d9ef">auto</span> strtegyObject <span style="color:#f92672">=</span> StrategyFactory<span style="color:#f92672">::</span>getStrategy(type);
+  Context context(strtegyObject);
+  context<span style="color:#f92672">-&gt;</span>doAction();
+}
+</code></pre></div><ul>
+<li>Strategy 类的定义比较简单，包含一个 Strategy 接口和一族实现这个接口的 Strategy 类</li>
+<li>Strategy 的创建由工厂类来完成，封装了策略的创建细节</li>
+<li>Strategy 模式包含一组策略，客户端代码如何选择使用哪个策略，有两种确定方法：编译时静态确定和运行时动态确定。其中，“运行时动态确定” 才是策略模式的最典型的应用场景。</li>
+</ul>
+<h3 id="template-vs-strategy">Template V.S. Strategy</h3>
+<p>Template 和 Strategy 模式实际上是实现了一个抽象接口的两种方式：<code>继承</code>和<code>组合</code>。继承是一种实现抽象接口的方式：我们将抽象节课声明在基类中，将具体的实现放在具体子类中；组合（委托）是另一种方式：我们将接口的实现放在被组合对象中，将具体的算法实现放在组合类中。两种方式各有优缺点：</p>
+<p><strong>继承</strong></p>
+<p><em>[优点]</em></p>
+<ol>
+<li>易于修改和扩展那些被复用的实现</li>
+</ol>
+<p><em>[缺点]</em></p>
+<ol>
+<li>破坏了封装性，继承中父类的实现细节暴露给子类了</li>
+<li>当父类的实现更改时，其所有子类将不得不随之改变</li>
+<li>从父类继承而来的实现在运行期间不能改变（编译期间就已经确定了）</li>
+</ol>
+<p><strong>组合</strong></p>
+<p><em>[优点]</em></p>
+<ol>
+<li>被包含对象的内部细节对外是不可见的，封装性好</li>
+<li>实现和抽象（组合对象和被组合对象）之间的依赖性很小</li>
+<li>可以在运行期间动态定义实现（通过抽象基类的指针）</li>
+</ol>
+<p><em>[缺点]</em></p>
+<ol>
+<li>系统中对象过多。在面向对象的设计中，组合相比继承可以取得更好的效果，因此优先使用组合而非继承。</li>
+</ol>
+<p>实际上，继承是一种限制性很强的抽象接口的方式，因此也是的基类和具体子类之间的耦合性很强。而组合的方式则有很小的耦合性，实现和接口之间的依赖性很小。例如 ConcerteStrategyA 的具体实现操作很容易被别的类复用，例如我们要建另一个 Context 类 AnotherContext, 只要组合一个指向 Strategy 的指针就可以很容易的复用 ConcerteStrategyA 的实现了。</p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2020/07/01/template_strategy/">https://maodanp.github.io/2020/07/01/template_strategy/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
+
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/c&#43;&#43;/">
+                            <i class="fa fa-tags"></i>
+                            c&#43;&#43;
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/design-pattern/">
+                            <i class="fa fa-tags"></i>
+                            design pattern
+                        </a>
+                    </li>
+                    
+                </ul>
+
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"><li id="li-rels"><a href="/2020/07/11/cpp_observer_subject/">观察者模式中Subject在C&#43;&#43;中的模板化</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年07月11日)</span></li><li id="li-rels"><a href="/2020/01/10/stl-range-methods/">STL容器的区间成员函数</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年01月10日)</span></li></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous"><a href="/2020/07/11/cpp_observer_subject/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2020/06/20/cpp_auto_type/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        <aside>
+    
+</aside>
+
+    </div>
+</div>
+
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2021  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
+</footer>
+
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+</html>
+

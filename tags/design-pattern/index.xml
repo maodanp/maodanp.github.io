@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>design pattern on Danping&#39;s blog</title>
+    <link>https://maodanp.github.io/tags/design-pattern/</link>
+    <description>Recent content in design pattern on Danping&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <copyright>Copyright (c) 2018. All rights reserved.</copyright>
+    <lastBuildDate>Sat, 11 Jul 2020 00:00:00 +0000</lastBuildDate><atom:link href="https://maodanp.github.io/tags/design-pattern/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>观察者模式中Subject在C&#43;&#43;中的模板化</title>
+      <link>https://maodanp.github.io/2020/07/11/cpp_observer_subject/</link>
+      <pubDate>Sat, 11 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://maodanp.github.io/2020/07/11/cpp_observer_subject/</guid>
+      <description>&lt;p&gt;本篇将介绍观察者模式中 Subject 类在 C++ 中的模板化的实现。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Template 与 Strategy 模式比较</title>
+      <link>https://maodanp.github.io/2020/07/01/template_strategy/</link>
+      <pubDate>Wed, 01 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://maodanp.github.io/2020/07/01/template_strategy/</guid>
+      <description>&lt;p&gt;本篇将分别介绍 Template 与 Strategy 模式。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
