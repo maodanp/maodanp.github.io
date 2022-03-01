@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="SAML（Security Assertion Makrup Language）全称是安全断言标记语言，是一种基于 XML 格式的开放标准的协议，用于在不同的安全域之间进行身份认证。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="SAML 标准协议解读 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+
+<title>
+    
+    SAML 标准协议解读
+    
+</title>
+
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
+
+
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2020年09月15日 
+                </div>
+                <h1 class="post-title">SAML 标准协议解读</h1>
+            </header>
+
+            <div class="post-content">
+                <p>SAML（<code>Security Assertion Makrup Language</code>）全称是<code>安全断言标记语言</code>，是一种基于 XML 格式的开放标准的协议，用于在不同的安全域之间进行身份认证。</p>
+<h3 id="saml-简介">SAML 简介</h3>
+<h4 id="saml-是什么">SAML 是什么</h4>
+<p>SAML 主要用于在不同的安全域（身份提供者 - <code>Identity Provider</code> 和 服务提供者 - <code>Service Provider</code>）之间进行身份认证（<code>Authentication</code>）和数据授权（<code>Authorization</code>）的一种协议，它可以用来传输安全的声明，比如：两台远程机器之间要通信，为了保证安全性可以采用加密的协议，也可以使用 SAML 来传输，两台机器可以不要求采用的是什么系统，只要能理解 SAML 规范即可。</p>
+<p>SAML 全称中有两个关键词：安全、断言。就是说 SAML 是用安全的方式表达断言的一种语言。</p>
+<ul>
+<li><code>断言</code>：就是做出判断的语言，SAML 结构中主要的内容就是为了证明登录的用户是谁（Authentication），拥有什么权限（Authorization）。</li>
+<li><code>安全</code>：别人有可能假冒你提供的一个断言从而骗取 SP (Service Provider) 以便窃取资源，那 SP 为什么会信任你的断言呢？为了防止断言被人篡改，SAML 中加入了安全措施，通过给断言加上签名和加密，再结合数字证书系统就能够确保 SAML 不受攻击了。</li>
+</ul>
+<h4 id="saml-优势">SAML 优势</h4>
+<p>SAML 的一个非常重要的应用就是基于 Web 的单点登录（<code>SSO</code>）。使用 SAML 可以保证系统安全性，我们只需要向 Idp 提供用户名密码即可，而且通过基于 SAML 的SSO 技术，用户不需要记住多个系统的用户名和密码，只用一个就够了。</p>
+<h3 id="saml-工作流程">SAML 工作流程</h3>
+<p>下图就是 SAML 的一种工作流程，图中共有三个角色：SP（服务提供者）、Idp（认证用户并生成断言）、Browser（client，就是用户）。</p>
+<p><img src="/pic/2020/2020-09-15-saml-1.png" alt="pic"></p>
+<p>用户的用户名、密码信息都会存在 Idp 服务器中，它会认证你就是你，也会告诉你有哪些服务授权。而且 SP 和 Idp 是被各自域管理员设置为相互信任的，就是说双方都持有对方的公钥。当用户一开始访问 SP 提供的某个服务时，不带有任何认证信息，这个时候 SP 并不认识你，于是就会有下面的认证和授权步骤：</p>
+<p><strong>步骤一</strong>：你去访问 SP 的某个受保护资源，比如浏览器打开：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-http" data-lang="http"><span style="color:#960050;background-color:#1e0010">http://sp.company.com/myresource
+</span></code></pre></div><p><strong>步骤二</strong>：SP 并没有找到相应的有效安全上下文，没有认证信息，当然不能给你对应的页面资源。 它就会生成一个 SAMLRequest 的认证请求数据包，并将 Browser 重定向到 Idp：</p>
+<pre tabindex="0"><code>302 Redirect
+Location: https://idp.company.com/SAML2/SSO/Redirect?SAMLRequest=request&amp;RelayState=token
+</code></pre><p>其中这个 SAMLRequest 就是用 Base64 编码的 samlp:AuthnRequest。以下截取某网站的 SAMLRequest:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">samlp:AuthnRequest</span>  
+    <span style="color:#a6e22e">xmlns:samlp</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span>
+    <span style="color:#a6e22e">ID</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;s2f6b9a86faddd8e7550f8871f3143f133708e16f8&#34;</span> 
+    <span style="color:#a6e22e">Version</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2.0&#34;</span> <span style="color:#a6e22e">IssueInstant</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2022-02-27T14:10:48Z&#34;</span> 
+    <span style="color:#a6e22e">Destination</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://idp.company.com/idp/SSO.saml2&#34;</span> 
+    <span style="color:#a6e22e">ForceAuthn</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;false&#34;</span> <span style="color:#a6e22e">IsPassive</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;false&#34;</span> 
+    <span style="color:#a6e22e">ProtocolBinding</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST&#34;</span> 
+    <span style="color:#a6e22e">AssertionConsumerServiceURL</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://sp.company.com/...&#34;</span>&gt;
+    &lt;<span style="color:#f92672">saml:Issuer</span> 
+        <span style="color:#a6e22e">xmlns:saml</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>&gt;https://sp.company.com/..
+    &lt;/<span style="color:#f92672">saml:Issuer</span>&gt;
+    &lt;<span style="color:#f92672">samlp:NameIDPolicy</span>  
+        <span style="color:#a6e22e">xmlns:samlp</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span>  
+        <span style="color:#a6e22e">Format</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:nameid-format:transient&#34;</span> 
+        <span style="color:#a6e22e">SPNameQualifier</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://sp.company.com/1eb65fdf-9643-417f-9974-ad72cae0e10f&#34;</span> 
+        <span style="color:#a6e22e">AllowCreate</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;true&#34;</span>&gt;
+    &lt;/<span style="color:#f92672">samlp:NameIDPolicy</span>&gt;
+    &lt;<span style="color:#f92672">samlp:Scoping</span> <span style="color:#a6e22e">xmlns:samlp</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span> <span style="color:#a6e22e">ProxyCount</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span>&gt;
+    &lt;<span style="color:#f92672">samlp:IDPList</span>  <span style="color:#a6e22e">xmlns:samlp</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span>&gt;
+    &lt;<span style="color:#f92672">samlp:IDPEntry</span> <span style="color:#a6e22e">xmlns:samlp</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span> <span style="color:#a6e22e">ProviderID</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;idp.company.com&#34;</span>&gt;
+    &lt;/<span style="color:#f92672">samlp:IDPEntry</span>&gt;
+    &lt;/<span style="color:#f92672">samlp:IDPList</span>&gt;
+    &lt;/<span style="color:#f92672">samlp:Scoping</span>&gt;
+&lt;/<span style="color:#f92672">samlp:AuthnRequest</span>&gt;
+</code></pre></div><p><strong>步骤三、四</strong>：Idp 也需要认证你就是你， 于是返回给你一个认证的页面， 可能使用用户名密码认证，也可以使用其它的认证方式，idp保存有你的用户名和密码。</p>
+<p><strong>步骤五</strong>：Idp 在认证你之后，如果觉得你输入的用户名、密码都是合法的， 就为你生成一些断言， 证明你是谁，你有什么权限等等。 并用自己的私钥签名。 然后包装成一个 response 格式，放在 form 表单里返回给你（Browser）。XHTML form 表单如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">form</span> <span style="color:#a6e22e">method</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;post&#34;</span> <span style="color:#a6e22e">action</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://sp.flydean.com/SAML2/SSO/POST&#34;</span> <span style="color:#960050;background-color:#1e0010">...</span>&gt;      
+  &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hidden&#34;</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;SAMLResponse&#34;</span> <span style="color:#a6e22e">value</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&lt;samlp:Response&gt;..&lt;/samlp:Response&gt;&#34;</span> /&gt;      
+  &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hidden&#34;</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;RelayState&#34;</span> <span style="color:#a6e22e">value</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;token&#34;</span> /&gt;       
+  ...      
+  &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;submit&#34;</span> <span style="color:#a6e22e">value</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Submit&#34;</span> /&gt;  
+&lt;/<span style="color:#f92672">form</span>&gt;
+</code></pre></div><p>SAML Response 的语句大致如下</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">samlp:Response</span>
+    <span style="color:#a6e22e">xmlns:samlp</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span>
+    <span style="color:#a6e22e">xmlns:saml</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>
+    <span style="color:#a6e22e">ID</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identifier_2&#34;</span>
+    <span style="color:#a6e22e">InResponseTo</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identifier_1&#34;</span>
+    <span style="color:#a6e22e">Version</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2.0&#34;</span>
+    <span style="color:#a6e22e">IssueInstant</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2020-09-05T09:22:05Z&#34;</span>
+    <span style="color:#a6e22e">Destination</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://sp.company.com/SAML2/SSO/POST&#34;</span>&gt;
+    &lt;<span style="color:#f92672">saml:Issuer</span>&gt;https://idp.company.com/SAML2&lt;/<span style="color:#f92672">saml:Issuer</span>&gt;
+    &lt;<span style="color:#f92672">samlp:Status</span>&gt;
+      &lt;<span style="color:#f92672">samlp:StatusCode</span>
+        <span style="color:#a6e22e">Value</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:status:Success&#34;</span>/&gt;
+    &lt;/<span style="color:#f92672">samlp:Status</span>&gt;
+  
+    &lt;<span style="color:#f92672">saml:Assertion</span>
+      <span style="color:#a6e22e">xmlns:saml</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>
+      <span style="color:#a6e22e">ID</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identifier_3&#34;</span>
+      <span style="color:#a6e22e">Version</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2.0&#34;</span>
+      <span style="color:#a6e22e">IssueInstant</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2020-09-05T09:22:05Z&#34;</span>&gt;
+      &lt;<span style="color:#f92672">saml:Issuer</span>&gt;https://idp.company.com/SAML2&lt;/<span style="color:#f92672">saml:Issuer</span>&gt;
+      <span style="color:#75715e">&lt;!-- a POSTed assertion MUST be signed --&gt;</span>
+      &lt;<span style="color:#f92672">ds:Signature</span>
+        <span style="color:#a6e22e">xmlns:ds</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://www.w3.org/2000/09/xmldsig#&#34;</span>&gt;...&lt;/<span style="color:#f92672">ds:Signature</span>&gt;
+      
+      &lt;<span style="color:#f92672">saml:Subject</span>&gt;
+        &lt;<span style="color:#f92672">saml:NameID</span>
+          <span style="color:#a6e22e">Format</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:nameid-format:transient&#34;</span>&gt;
+          3f7b3dcf-1674-4ecd-92c8-1544f346baf8
+        &lt;/<span style="color:#f92672">saml:NameID</span>&gt;
+        &lt;<span style="color:#f92672">saml:SubjectConfirmation</span>
+          <span style="color:#a6e22e">Method</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:cm:bearer&#34;</span>&gt;
+          &lt;<span style="color:#f92672">saml:SubjectConfirmationData</span>
+            <span style="color:#a6e22e">InResponseTo</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identifier_1&#34;</span>
+            <span style="color:#a6e22e">Recipient</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://sp.company.com/SAML2/SSO/POST&#34;</span>
+            <span style="color:#a6e22e">NotOnOrAfter</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2020-09-05T09:27:05Z&#34;</span>/&gt;
+        &lt;/<span style="color:#f92672">saml:SubjectConfirmation</span>&gt;
+      &lt;/<span style="color:#f92672">saml:Subject</span>&gt;
+      
+      &lt;<span style="color:#f92672">saml:Conditions</span>
+        <span style="color:#a6e22e">NotBefore</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2020-09-05T09:17:05Z&#34;</span>
+        <span style="color:#a6e22e">NotOnOrAfter</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2020-09-05T09:27:05Z&#34;</span>&gt;
+        &lt;<span style="color:#f92672">saml:AudienceRestriction</span>&gt;
+          &lt;<span style="color:#f92672">saml:Audience</span>&gt;https://sp.company.com/SAML2&lt;/<span style="color:#f92672">saml:Audience</span>&gt;
+        &lt;/<span style="color:#f92672">saml:AudienceRestriction</span>&gt;
+      &lt;/<span style="color:#f92672">saml:Conditions</span>&gt;
+      
+     &lt;<span style="color:#f92672">saml:AuthnStatement</span>
+        <span style="color:#a6e22e">AuthnInstant</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;2020-09-05T09:22:00Z&#34;</span>
+        <span style="color:#a6e22e">SessionIndex</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;identifier_3&#34;</span>&gt;
+        &lt;<span style="color:#f92672">saml:AuthnContext</span>&gt;
+          &lt;<span style="color:#f92672">saml:AuthnContextClassRef</span>&gt;
+            urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport
+         &lt;/<span style="color:#f92672">saml:AuthnContextClassRef</span>&gt;
+        &lt;/<span style="color:#f92672">saml:AuthnContext</span>&gt;
+     &lt;/<span style="color:#f92672">saml:AuthnStatement</span>&gt;
+      
+     &lt;<span style="color:#f92672">saml:AttributeStatement</span>&gt;
+      &lt;<span style="color:#f92672">saml:Attribute</span>
+       <span style="color:#a6e22e">xmlns:x500</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:profiles:attribute:X500&#34;</span>
+       <span style="color:#a6e22e">x500:Encoding</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;LDAP&#34;</span>
+       <span style="color:#a6e22e">NameFormat</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span>
+       <span style="color:#a6e22e">Name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;urn:oid:1.3.6.1.4.1.5923.1.1.1.1&#34;</span>
+       <span style="color:#a6e22e">FriendlyName</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;eduPersonAffiliation&#34;</span>&gt;
+       &lt;<span style="color:#f92672">saml:AttributeValue</span>
+         <span style="color:#a6e22e">xsi:type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;xs:string&#34;</span>&gt;member&lt;/<span style="color:#f92672">saml:AttributeValue</span>&gt;
+       &lt;<span style="color:#f92672">saml:AttributeValue</span>
+         <span style="color:#a6e22e">xsi:type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;xs:string&#34;</span>&gt;staff&lt;/<span style="color:#f92672">saml:AttributeValue</span>&gt;
+      &lt;/<span style="color:#f92672">saml:Attribute</span>&gt;
+     &lt;/<span style="color:#f92672">saml:AttributeStatement</span>&gt;
+      
+    &lt;/<span style="color:#f92672">saml:Assertion</span>&gt;
+  &lt;/<span style="color:#f92672">samlp:Response</span>&gt;
+</code></pre></div><p>其中 Authnstatement 认证语句表示你认证成功了。subject 表示你是谁。而Attributestatement 表示你有哪些属性。 还有一个授权语句上面例子中没有。</p>
+<p><strong>步骤六</strong>：这个 form 被 JavaScript 自动提交给 SP。</p>
+<p><strong>步骤七</strong>：SP 读到 form 提交上来的断言（Assertion）。 并通过 idp 的公钥验证了 Assertion 的签名。 于是信任了这个 Assertion， 知道你是idp的合法用户了。 所以就最终给你返回了你最初请求的页面了。</p>
+<p>如果在<strong>步骤一</strong>中，Browser 带有认证信息，比如对于 OAuth2.0 而言，带有 self-contained Access token，SP 收到这个请求之后会就不需要问 Idp 这个人是谁，是否有访问该资源的权限。而是只要通过解密 Access token 中的签名 Hash 信息，就能通过认证与授权，将 Resource 直接返回给用户。当然，这个 Access token 是有时效性的，通常是几个小时，通常情况下 Client 会在 Access token 快过期的时候，提前通过 Refresh token 去交换一个新的 Access Token, 这样新的 Access token 有会有几小时的有效期，而 Refresh token 本身的有效期通常达到几十天。</p>
+<h3 id="saml-标准结构">SAML 标准结构</h3>
+<p><img src="/pic/2020/2020-09-15-saml-2.png" alt="pic"></p>
+<p>SAML 标准从内到外，可以分为上图的 4 个层次：</p>
+<h4 id="assertions">Assertions</h4>
+<p>断言。 规定了断言的xml结构，它规定了这个 assertion 节点该怎么写，也就是这个节点的 scheme。它里面由一个或者多个语句组成：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">   &lt;<span style="color:#f92672">saml:Assertion</span>
+      <span style="color:#960050;background-color:#1e0010">&lt;</span><span style="color:#a6e22e">saml:Subject</span>&gt; ... &lt;/<span style="color:#f92672">saml:Subject</span>&gt;
+      &lt;<span style="color:#f92672">saml:Conditions</span>&gt;...&lt;/<span style="color:#f92672">saml:Conditions</span>&gt;
+      &lt;<span style="color:#f92672">saml:AuthnStatement</span>&gt;...&lt;/<span style="color:#f92672">saml:AuthnStatement</span>&gt;
+      &lt;<span style="color:#f92672">saml:AttributeStatement</span>&gt;...&lt;/<span style="color:#f92672">saml:AttributeStatement</span>&gt;
+      ...
+    &lt;/<span style="color:#f92672">saml:Assertion</span>&gt;
+</code></pre></div><h4 id="protocols">Protocols</h4>
+<p>协议。定义了如何请求和回复 SAML 消息。它规定了怎么发送，回复消息的格式，这样不同域的服务器才能通信。</p>
+<h4 id="bindings">Bindings</h4>
+<p>绑定。规定了怎么样传输 SAML 的协议，这里规定了如何在 http 上或者 SOAP 上传输 SAML 的协议数据包。只要 SAML 消息本身是完整的可靠的，用什么协议传输不重要。SAML 标准规定的绑定只是一种标准实现，SAML 消息可以绑定到任何协议上，只要 SP 和 Idp 协商好就行了。</p>
+<h4 id="profiles">Profiles</h4>
+<p>配置或者称之为解决方案。它规定了某些场景下一整套 SAML 认证的细节和步骤。比如，它规定了比较著名的SSO方案。就是如何用 SAML 实现 SSO 的一整套配置和详细步骤。规定了 ECP（Enhanced Client and Proxy）Profile 等等。</p>
+<h3 id="参考阅读">参考阅读</h3>
+<p><a href="https://www.cnblogs.com/flydean/p/14129755.html">SAML2.0 初探</a></p>
+<p><a href="https://www.cnblogs.com/flydean/p/14129755.html">我眼中的SAML</a></p>
+<p><a href="https://www.oasis-open.org/committees/download.php/11511/sstc-saml-tech-overview-2.0-draft-03.pdf">SAML tech overview</a></p>
+<p><a href="https://datatracker.ietf.org/doc/html/rfc7522">RFC755-SAML for OAuth 2.0 Client Authentication and Authorization Grants</a></p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2020/09/15/SAML/">https://maodanp.github.io/2020/09/15/SAML/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
+
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                </ul>
+
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous"><a href="/about/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2020/07/11/cpp_observer_subject/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        <aside>
+    
+</aside>
+
+    </div>
+</div>
+
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2022  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
+</footer>
+
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+</html>
+
