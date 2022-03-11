@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="基于授权码（Authorization code grant）技术的 OAuth 2.0 客户端容易受到授权码被劫持（interception attack）的风险。本篇文章基于 RFC7636 主要介绍了OAuth 2.0 客户端在 code exchange （Authz code exchange access token）阶段如何使用秘钥凭证来减缓这种攻击。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="秘钥凭证 （Proof Key）在OAuth 客户端 Code Exchange 阶段的应用 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+
+<title>
+    
+    秘钥凭证 （Proof Key）在OAuth 客户端 Code Exchange 阶段的应用
+    
+</title>
+
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
+
+
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2022年03月09日 
+                </div>
+                <h1 class="post-title">秘钥凭证 （Proof Key）在OAuth 客户端 Code Exchange 阶段的应用</h1>
+            </header>
+
+            <div class="post-content">
+                <p>基于授权码（<code>Authorization code grant</code>）技术的 OAuth 2.0 客户端容易受到授权码被劫持（interception attack）的风险。本篇文章基于 <a href="https://datatracker.ietf.org/doc/html/rfc7636">RFC7636</a> 主要介绍了OAuth 2.0 客户端在 <code>code exchange</code> （Authz code exchange access token）阶段如何使用秘钥凭证来减缓这种攻击。</p>
+<h3 id="授权码拦截攻击">授权码拦截攻击</h3>
+<p>在 OAuth 2.0 协议 <a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC6749</a> 中，授权码是通过认证/授权服务器返回到重定向的 URI的，并且这个返回的路径是不受 TLS 保护的，这个重定向 URI 可以指向某个 URL 或者是客户端系统内的某个应用程序。</p>
+<p>一旦攻击者获取到这个 <code>Authz code</code>， 就能够利用它去交换得到一个 <code>Access token</code>。有了这个 token，攻击者就能冒充合法的应用程序访问到服务器（<code>service provider</code>）中的资源了。</p>
+<p>下图展示了攻击者如何进行授权码拦截的过程：</p>
+<p><img src="/pic/2022/2022-03-09-PKCE-1.png" alt="pic"></p>
+<p><strong>第一步</strong>：运行在终端设备上的本地应用（legitimate OAuth 2.0 App）通过操作系统或者浏览器发送 OAuth 2.0 的授权请求（<code>Authz request</code>），一般 <code>redirect URI</code> 都是自定义的。</p>
+<p><strong>第二、三步</strong>：授权请求经过操作系统或者浏览器发往了授权服务器（<code>Authz server</code>）, 然后授权服务器返回了授权码（<code>Authz code</code>）。因为 OAuth 要求使用 TLS 作为传输的协议，所以这些请求都是受 TLS 保护的，不会收到中间人攻击。</p>
+<p><strong>第四步</strong>：通过步骤一提供的 URI 重定向的方式将 <code>Authz code</code> 返回给了这个 <code>redirect URI</code> 指向的地址。除了合法的 App 之外，恶意程序（malicious App）也有可能将自己注册为自定义的 redirect URI ，这样恶意程序就有可能拿到这个 Authz code。</p>
+<h4 id="授权码拦截的一些先决条件">授权码拦截的一些先决条件</h4>
+<ol>
+<li>Hack 需要将自己的恶意 App  安装到用户的终端设备， 还需要将自定义的 Redirect URI 注册到其他的 App， 也就是操作系统必须允许这种自定义的 URI scheme 能够跨 App 的注册。</li>
+<li>Hack 需要能够拿到 OAuth 2.0 中的 <code>client_id</code> 和 <code>client_secret</code>。这里的 client_id 是基于设备的，也就是不同的设备类型（Mac/Windows/IOS/Android）使用不同的 client_id，client_secret。因为这种信息是在客户端保存的，这种在客户端保存的秘钥也不能被认为是绝对安全的。</li>
+<li>Hack 能够监测到授权服务器的 response。</li>
+</ol>
+<h4 id="pkce--proof-key-for-code-exchange流程">PKCE  （Proof Key for Code Exchange）流程</h4>
+<p>为了降低授权码被拦截的风险，这个协议引入了 <code>code verifier</code>（授权码验证器）的概念，它实际就是一个动态创建的、加密的随机秘钥。并且每个 <code>Authz request</code> 都会创建唯一的一个 code verifier, 并将其转换后的值 <code>code challenge</code> 发送到 <code>Authz server</code> 以获取 <code>Authz code</code>（见下图的步骤 A、B）。</p>
+<p>然后，将这个获得的 Authz code 以及之前的 code verifier 一起发送到 Authz server，server 会将 code verifier 进行 <code>hash</code> 运算以及 <code>base64 URL</code> 编码，将得到的结果跟之前收到的 code challenge （之前 Authz request 携带过来的）进行比较。如果值相等则表示这个 Authz code 是有效的，会返回 access token，否则被认为是非法的，会返回无效授权的错误（见下图的步骤 C、D）。</p>
+<p>PKCE 协议能够有效的降低授权码被劫持的风险，因为攻击者不知道这个一次性密钥，<code>Authz request</code> 和 <code>access token request</code> 都是通过 <code>TLS</code> 发送的并且无法被拦截。</p>
+<p><img src="/pic/2022/2022-03-09-PKCE-2.png" alt="pic"></p>
+<h3 id="pkce-proof-key-for-code-exchange协议详解">PKCE （Proof Key for Code Exchange）协议详解</h3>
+<ul>
+<li>Client 创建一个 Code Verifier</li>
+</ul>
+<p>Client 会为每个 Authz request 创建一个 <code>coder verifier</code>，它是由一串随机字符串组成的。这个 code verifier 应该有足够的高的熵（<code>entropy</code>）或者说足够高的随机性，这能够否防止 code verifier 被 hack 轻易的破解。</p>
+<ul>
+<li>Client 创建对应的 Code Challenge</li>
+</ul>
+<p>Client 通过之前的 code verifier 创建对应的 <code>code challenge</code>, 创建规则如下：</p>
+<pre tabindex="0"><code>[Plain]
+code_challenge = code_verifier
+
+[S256]
+code_challenge = BASE64URL-ENCODE(SHA256(code_verifier))
+</code></pre><p>如果 client 端能够支持 <code>S256</code>，就必须使用这种转换规则，并且这种规则在服务器端也是强制要求要能够支持的。而 client 端使用 <code>plain</code> 转换规则的前提是当且仅当 client 端由于某些技术原因不能支持 S256。</p>
+<ul>
+<li>Client 通过 Authz request 发送 Code Challenge</li>
+</ul>
+<p>Client 将 <code>code challenge</code> 作为 Authz request 的参数发送给 server。</p>
+<pre tabindex="0"><code>[code_challenge]
+必需填写项
+
+[code_challenge_method]
+可选项，默认是使用 plain，code verifier 转换的方法可以是 S256 或者 plain。
+</code></pre><ul>
+<li>Server 返回 Authz Code</li>
+</ul>
+<p>当 server 在 Authz response 中返回 Authz code 的时候，server 必须要将 code_challenge 跟这个 Authz code 进行关联，以便在下一个 access token request 中能够验证 code verifier 的有效性。</p>
+<ul>
+<li>Client 发送 Authz Code</li>
+</ul>
+<p>Client 发送 Access token request 给 server,  除了 OAuth 2.0 需要的一些必要参数外，还需要额外的参数：<code>code_verifier</code>。</p>
+<ul>
+<li>Server 在返回 Access Token 之前验证 coder verifier</li>
+</ul>
+<p>Server 会基于 code_verifier 做转换，然后将转换出的结果跟之前关联的 code_challenge 作比较。具体的转换规则依赖于 <code>code_challenge_method</code> 属性。</p>
+<pre tabindex="0"><code>BASE64URL-ENCODE(SHA256(code_verifier)) == code_challenge
+</code></pre><p>如果这个属性是 S256，code_verifier 需要做 SHA-256 的 hash, 然后是 base64url 的编码。如果这个属性是 plain，code_verifier 直接跟 code_challenge 比较。</p>
+<pre tabindex="0"><code>code_verifier == code_challenge
+</code></pre><p>如果比较的值相等，Authz server 会返回 Access token 给 client 端， 如果不相等，则返回一个 error message 表示这是一个无效的授权（ invalid grant）。</p>
+<h3 id="关于安全性的考虑">关于安全性的考虑</h3>
+<h4 id="code_verifier-的熵">code_verifier 的熵</h4>
+<p>这个 PKCE 安全模型需要依赖于 code verifier 是否容易被 hack 学习或者猜到，坚持这一原则也是至关重要的。因此这个 code verifier 的创建必须是加密的并且具有足够高的随机性。</p>
+<h4 id="防止窃听">防止窃听</h4>
+<p>客户端在尝试 <code>S256</code> 的规则后不得降级为 <code>plain</code> ，对于支持 PKCE 的服务器也必须要支持 S256，不支持 PKCE 的服务器将简单地忽略未知的 code_verifier 。 因此在出现 S256 时的错误只能表示 server 出现故障或者攻击者正在尝试降级攻击，而并不意味着 server 不支持 S256。</p>
+<h4 id="code_challenge-的-salt">code_challenge 的 Salt</h4>
+<p>为了降低实现的复杂度，在产生 code challenge 过程中不需要使用 salting，因为 code verifier 已经包含了足够的随机性来避免被攻击。</p>
+<h3 id="参考阅读">参考阅读</h3>
+<p>[PKCE by OAuth Public Clients](</p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2022/03/09/PKCE/">https://maodanp.github.io/2022/03/09/PKCE/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
+
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/security/">
+                            <i class="fa fa-tags"></i>
+                            Security
+                        </a>
+                    </li>
+                    
+                </ul>
+
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"><li id="li-rels"><a href="/2022/02/22/key_management_service/">基于云服务的 KMS 架构解读</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2022年02月22日)</span></li><li id="li-rels"><a href="/2020/09/15/SAML/">SAML 标准协议解读</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年09月15日)</span></li></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous disabled"><a href="#"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2022/02/22/key_management_service/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        <aside>
+    
+</aside>
+
+    </div>
+</div>
+
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2022  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
+</footer>
+
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+</html>
+
