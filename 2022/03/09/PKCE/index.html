@@ -139,7 +139,7 @@ code_challenge = BASE64URL-ENCODE(SHA256(code_verifier))
 <h4 id="code_challenge-的-salt">code_challenge 的 Salt</h4>
 <p>为了降低实现的复杂度，在产生 code challenge 过程中不需要使用 salting，因为 code verifier 已经包含了足够的随机性来避免被攻击。</p>
 <h3 id="参考阅读">参考阅读</h3>
-<p>[PKCE by OAuth Public Clients](</p>
+<p><a href="https://datatracker.ietf.org/doc/html/rfc7636.html">PKCE by OAuth Public Clients</a></p>
             </div>
             
             <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
