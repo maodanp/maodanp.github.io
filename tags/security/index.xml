@@ -35,5 +35,14 @@
       <description>&lt;p&gt;SAML（&lt;code&gt;Security Assertion Makrup Language&lt;/code&gt;）全称是&lt;code&gt;安全断言标记语言&lt;/code&gt;，是一种基于 XML 格式的开放标准的协议，用于在不同的安全域之间进行身份认证。&lt;/p&gt;</description>
     </item>
     
+    <item>
+      <title>TLS 握手协议解析</title>
+      <link>https://maodanp.github.io/2020/07/30/TLS_handshake/</link>
+      <pubDate>Thu, 30 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://maodanp.github.io/2020/07/30/TLS_handshake/</guid>
+      <description>&lt;p&gt;TLS 是一种密码学的协议，用来保证两个实体之间的会话安全，TLS 是一种位于应用层和传输层之间的协议。本文将会详细描述 TLS 中的握手协议的流程。&lt;/p&gt;</description>
+    </item>
+    
   </channel>
 </rss>
