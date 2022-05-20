@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="author" content="Danping">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="数据结构于算法中有很多种不同的排序算法，在 C&#43;&#43; 语言中，常见的排序排序算法是 std::sort, 本篇主要介绍基于谓词的 std::sort 以及常见使用场景。">
+<meta property="og:url" content="https://maodanp.github.io/"><meta property="og:type" content="article">
+<meta property="og:title" content="C&#43;&#43; 中基于谓词的 std::sort 介绍 - Danping&#39;s blog"><meta property="og:site_name" content="Danping&#39;s blog">
+
+<title>
+    
+    C&#43;&#43; 中基于谓词的 std::sort 介绍
+    
+</title>
+
+<link rel="stylesheet" href="/onlyone/onlyone.css">
+<link rel="shortcut icon" href="/assets/favicon.ico">
+<script src="/onlyone/onlyone.js"></script>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/index.xml">
+</head>
+<body>
+
+
+<div class="container">
+    <header class="nav">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Danping&#39;s blog</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        <li><a href="/categories/技术志/">技术志</a></li>
+                        <li><a href="/categories/工具箱/">工具箱</a></li>
+                        <li><a href="/categories/杂谈集/">杂谈集</a></li>
+                        <li><a href="/tags/">分类</a></li>
+                        <li><a href="/about/">关于</a></li>
+                        <li>
+                            <form method="get" style="padding: 8px" action="https://www.google.com/search" target="_blank">
+                                <input type="hidden" name="sitesearch" value="maodanp.github.io"/>
+                                <input type="text" class="form-control" name="q" placeholder="Press enter to search">
+                            </form>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <article class="post single">
+
+            <header>
+                <div class="post-date">
+                    2019年07月05日 
+                </div>
+                <h1 class="post-title">C&#43;&#43; 中基于谓词的 std::sort 介绍</h1>
+            </header>
+
+            <div class="post-content">
+                <p>数据结构于算法中有很多种不同的排序算法，在 C++ 语言中，常见的排序排序算法是 <code>std::sort</code>, 本篇主要介绍基于谓词的 <code>std::sort</code> 以及常见使用场景。</p>
+<h3 id="c-中的排序方法概述">C++ 中的排序方法概述</h3>
+<p>C++ 中 <code>std::sort</code> 是一个标准的排序算法， 它的语法声明如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">RandomAccessIterator</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> sort ( RandomAccessIterator first,RandomAccessIterator last );
+
+<span style="color:#66d9ef">template</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">RandomAccessIterator</span>,<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Compare</span><span style="color:#f92672">&gt;</span>
+<span style="color:#66d9ef">void</span> sort ( RandomAccessIterator first,RandomAccessIterator last, StrictWeakOrdering comp );
+</code></pre></div><p>参数中通过 <code>first</code>、 <code>last</code> 作为需要排序的区间，一般比较多的使用场景是针对 <code>std::vector</code> 或者数组进行排序 (其他 STL 例如 <code>std::map</code>, <code>std::set</code> 本身存储的是已经排好序的)。当然，从声明中我们可以看到迭代器类型是随机访问的，也就是可以对支持随机访问迭代器的容器（<code>Container</code>）进行排序。</p>
+<p><code>std::list</code> 则不能通过 <code>std::sort</code> 方法排序, 因为它的迭代器不是随机访问迭代器。如果你想要对 <code>std::list</code> 进行排序，你需要使用 <code>std::list::sort</code> 成员方法进行排序。</p>
+<p><code>std::sort</code>所使用的排序算法取决于不同的编译器，但是时间复杂度一般不会超过 <code>O(N log N)</code>，其中 <code>N</code> 为元素个数。通常 <code>std::sort</code> 的实现会基于不同排序算法的优缺点组合实现。其中一个算法是 <code>IntroSort</code>。
+<code>IntroSort</code> 是一种混合的排序算法，其目标就是提供一种排序算法，它具有快速的平均时间复杂度和最优的最差时间复杂度。它结合了快速排序和堆排序，结合了两者的有点。 其平均和最差时间复杂度都是 <code>O(N log N)</code>。</p>
+<p>理论上，对数字进行排序和对任何数据进行排序是没有任何区别的。它们使用相同的算法，唯一的差别是不同的数据类型使用了不同的比较方法。</p>
+<h4 id="string-类型排序">String 类型排序</h4>
+<p>任何带有 <code>RandomIterator</code> 的容器都可以使用 <code>std::sort</code> 进行排序，<code>std::string</code> 也实现了随机访问迭代器，下面的示例展示了对 <code>Hello World</code> 字符串的排序：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;algorithm&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;iostream&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+std<span style="color:#f92672">::</span>string hello{ <span style="color:#e6db74">&#34;Hello World!&#34;</span> };
+std<span style="color:#f92672">::</span>sort(hello.begin(), hello.end());
+std<span style="color:#f92672">::</span>cout <span style="color:#f92672">&lt;&lt;</span> hello <span style="color:#f92672">&lt;&lt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>;
+</code></pre></div><p>输出结果为 <code> !HWdellloor</code>, 可以看到输出结果是严格按照字母递增排序的。</p>
+<h3 id="对结构或者类的排序">对结构或者类的排序</h3>
+<p>如果某个数据可以通过小于操作符 <code>&lt;</code> 进行比较，那么当该数据位于支持随机访问的容器中时， 就可以对其进行排序。
+考虑到下面是的示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">some_data</span>
+{
+    some_data() <span style="color:#f92672">=</span> <span style="color:#66d9ef">default</span>;
+    some_data(<span style="color:#66d9ef">int</span> val) <span style="color:#f92672">:</span> a(val) {}
+    <span style="color:#66d9ef">int</span> a;
+};
+
+std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>some_data<span style="color:#f92672">&gt;</span> elements <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">9</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">7</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">7</span>,<span style="color:#ae81ff">3</span> };
+std<span style="color:#f92672">::</span>sort(elements.begin(), elements.end());
+</code></pre></div><p>当运行这断代码时，你将会得到下面的编译错误，编译器没有找到合适的 <code>operator &lt;</code> 比较操作去比较两个 <code>some_data</code> 实例。</p>
+<pre tabindex="0"><code> error: no match for ‘operator&lt;’ (operand types are ‘some_data’ and ‘some_data’)
+</code></pre><p>通常有三种方式解决这问题：</p>
+<ul>
+<li>在类的内部，实现 <code>operator&lt;</code> 成员函数的重载</li>
+<li>在类的外部，实现 <code>operator&lt;</code> 非成员函数的重载</li>
+<li>通过谓词（<code>predicate</code>）来实现</li>
+</ul>
+<h4 id="成员函数-operator--的重载">成员函数 operator &lt; 的重载</h4>
+<p>如果这种比较函数仅仅针对这个类/结构体本身使用，成员函数 <code>operator &lt; </code> 的重载是最简单和简洁的一种方式。
+还是使用上面的 <code>some_data</code> 作为例子，在结构体中使用下面声明的方法 (<code>rhs</code> 表示 <code>right hand side</code>)：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span> <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">const</span> some_data<span style="color:#f92672">&amp;</span> rhs) <span style="color:#66d9ef">const</span>
+</code></pre></div><p>结构体定义如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">some_data</span>
+{
+    some_data() <span style="color:#f92672">=</span> <span style="color:#66d9ef">default</span>;
+    some_data(<span style="color:#66d9ef">int</span> val) <span style="color:#f92672">:</span> a(val) {}
+
+    <span style="color:#66d9ef">int</span> a;
+
+    <span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> some_data <span style="color:#f92672">&amp;</span> rhs) <span style="color:#66d9ef">const</span>
+    {
+        <span style="color:#66d9ef">return</span> a <span style="color:#f92672">&lt;</span> rhs.a;
+    }
+};
+</code></pre></div><p>再次使用 <code>std::sort</code> 将会调用到自定义的重载的小于操作符。</p>
+<h4 id="非成员函数-operator-的重载">非成员函数 operator&lt; 的重载</h4>
+<p>如果你不能改变类或者结构体的话，可以使用非成员函数 <code>operator &lt;</code> 的重载，在类的外部定义下面的方法：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">bool</span> <span style="color:#66d9ef">operator</span><span style="color:#f92672">&lt;</span>(<span style="color:#66d9ef">const</span> some_data <span style="color:#f92672">&amp;</span> lhs, <span style="color:#66d9ef">const</span> some_data <span style="color:#f92672">&amp;</span> rhs)
+{
+    <span style="color:#66d9ef">return</span> lhs.a <span style="color:#f92672">&lt;</span> rhs.a;
+}
+</code></pre></div><h4 id="基于谓词predict的排序">基于谓词（predict）的排序</h4>
+<p>对于排序，一个谓词表示对象 <code>A</code> 是否在对象 <code>B</code> 之前，因此一个搜索谓词必须有两个相同类型的参数。
+假设下面的一个汽车的结构，每辆汽车都有特定的属性，如制造商、型号、年份和价格。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">car</span>
+{
+    std<span style="color:#f92672">::</span>string make;
+    std<span style="color:#f92672">::</span>string model;
+    <span style="color:#66d9ef">int</span> year;
+    <span style="color:#66d9ef">double</span> price;
+};
+</code></pre></div><p>我们可以基于汽车的某个属性进行排序。</p>
+<ul>
+<li>Lambda 作为排序谓词</li>
+</ul>
+<p>使用 <code>lambda</code> 表达式作为谓词也许是最简单和高效的一种实现方式。<code>lambda</code> 是一种匿名方法，编译器能够更加容易对其进行内联和优化，同样它相比普通函数而言也更加容易阅读。
+我们可以定义下面基于 <code>lambda</code> 的谓词对制造商、型号进行排序。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">auto</span> sortByMakeAndModel <span style="color:#f92672">=</span> 
+    [](<span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> a, <span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> b) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>
+{
+    <span style="color:#66d9ef">if</span> (a.make <span style="color:#f92672">&lt;</span> b.make) <span style="color:#66d9ef">return</span> true;
+    <span style="color:#66d9ef">if</span> (a.make <span style="color:#f92672">&gt;</span> b.make) <span style="color:#66d9ef">return</span> false;
+    <span style="color:#66d9ef">if</span> (a.model <span style="color:#f92672">&lt;</span> b.model) <span style="color:#66d9ef">return</span> true;
+    <span style="color:#66d9ef">if</span> (a.model <span style="color:#f92672">&gt;</span> b.model) <span style="color:#66d9ef">return</span> false;
+
+    <span style="color:#66d9ef">return</span> false;
+};
+
+std<span style="color:#f92672">::</span>sort(first, last, sortByMakeAndModel);
+</code></pre></div><p>或者下面的表达式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">auto</span> sortByMakeAndModel <span style="color:#f92672">=</span> 
+    [](<span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> a, <span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> b) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>
+{
+    <span style="color:#66d9ef">return</span> 
+        (
+            (a.make <span style="color:#f92672">&lt;</span> b.make) <span style="color:#f92672">||</span>
+            (a.make <span style="color:#f92672">==</span> b.make <span style="color:#f92672">&amp;&amp;</span> a.model <span style="color:#f92672">&lt;</span> b.model)
+        );
+};
+
+std<span style="color:#f92672">::</span>sort(first, last, sortByMakeAndModel);
+</code></pre></div><p>这两种表达式都是等价的。</p>
+<ul>
+<li>非成员函数作为谓词</li>
+</ul>
+<p>非成员函数是没有定义在类或者结构体中的方法，它的行为像 <code>lambda</code>，但是可以出现在多个编译模块。出于性能原因，使用非成员方法可以声明为 <code>inline</code>。我们可以给编译器一个提示，使用 <code>inline</code> 来内联该方法。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">inline</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">sortYear</span>(<span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> a, <span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> b)
+{
+    <span style="color:#66d9ef">return</span> a.year <span style="color:#f92672">&lt;</span> b.year;
+}
+
+std<span style="color:#f92672">::</span>sort(first, last, <span style="color:#f92672">&amp;</span>sortYear);
+</code></pre></div><ul>
+<li>成员函数作为谓词</li>
+</ul>
+<p>使用成员方法需要基于类或结构的实例。<code>c++11</code> 引入了 <code>std::bind</code>。它简化了绑定到类中的方法，但是在构造 <code>std::bind</code> 对象时必须小心。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">car_sort</span>
+{
+    <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">sortYear</span>(<span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> a, <span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> b) <span style="color:#66d9ef">const</span>
+    {
+        <span style="color:#66d9ef">return</span> a.year <span style="color:#f92672">&lt;</span> b.year;
+    }
+};
+</code></pre></div><p>这里必须要声明一个类的可用的实例，<code>car_sort sortInstance</code>,  <code>sortYear</code> 这个方法也必须要声明为 public 。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#f92672">::</span>sort(                 <span style="color:#75715e">// (1) Call to std::sort
+</span><span style="color:#75715e"></span>  first,                   <span style="color:#75715e">// (2) First iterator
+</span><span style="color:#75715e"></span>  last,                    <span style="color:#75715e">// (3) End iterator
+</span><span style="color:#75715e"></span>  std<span style="color:#f92672">::</span>bind(               <span style="color:#75715e">// (4) Predicate, which is std::bind
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&amp;</span>car_sort<span style="color:#f92672">::</span>sortYear,   <span style="color:#75715e">// (5) Pointer to member method
+</span><span style="color:#75715e"></span>    sort_instance,         <span style="color:#75715e">// (6) Instance of struct
+</span><span style="color:#75715e"></span>    std<span style="color:#f92672">::</span>placeholders<span style="color:#f92672">::</span>_1, <span style="color:#75715e">// (7) Placeholder for argument 1
+</span><span style="color:#75715e"></span>    std<span style="color:#f92672">::</span>placeholders<span style="color:#f92672">::</span>_2  <span style="color:#75715e">// (8) Placeholder for argument 2
+</span><span style="color:#75715e"></span>  )
+);
+</code></pre></div><p>使用 <code>std::bind</code> 有可能导致运行时的开销，因为通过这种方式调用的谓词本质上是一个函数指针，与任何指针一样它可能在运行时被更改。编译器可能会优化哪些在运行时不会被更改的指针，这也是动态绑定的一个例子。
+使用 <code>lambda</code> 表达式，可以获得静态绑定的指针，也就是 <code>lambda</code> 可以在编译时就被解析。</p>
+<h3 id="stdlist-排序">std::list 排序</h3>
+<p>对 <code>std::list</code> 进行排序与对 <code>std::vector</code> 或者 <code>std::string</code> 的排序几乎类似的，除了 <code>std::list</code> 的排序方法是一个成员函数。 除了这个区别，<code>list::sort· 方法不接受范围，它有两个重载类型，一个是没有谓词，一个是有谓词。 对于没有谓词的排序，默认是小于操作符 </code>operator &lt;` 。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">std<span style="color:#f92672">::</span>list<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> numbers <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">9</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">6</span> };
+numbers.sort();
+</code></pre></div><p>对于包含谓词的 <code>std::list::sort</code>, 我们可以基于 <code>lambda</code> 表达式去实现：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">auto</span> sortYearPredicate <span style="color:#f92672">=</span> [](<span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> a, <span style="color:#66d9ef">const</span> car <span style="color:#f92672">&amp;</span> b) <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">bool</span>
+{
+    <span style="color:#66d9ef">return</span> a.year <span style="color:#f92672">&lt;</span> b.year; 
+};
+cars.sort(sortYearPredicate);
+</code></pre></div><h3 id="参考阅读">参考阅读</h3>
+<p><a href="https://en.cppreference.com/w/cpp/algorithm/sort">std::sort - cppreference.com</a></p>
+<p><a href="https://blog.csdn.net/xijiacun/article/details/72902680">std::sort排序算法</a></p>
+<p><a href="https://studiofreya.com/cpp/cpp-std-sort-predicate-with-templates/">C++ std::sort predicate with templates</a></p>
+            </div>
+            
+            <div style="border: 1px dashed #e0e0e0; margin-bottom: 15px; padding: 10px 10px 10px 10px; background-color: #fffeee; background-repeat: no-repeat; background-attachment: scroll; background-position: 1% 50%; -moz-background-size: auto auto; -moz-background-clip: -moz-initial; -moz-background-origin: -moz-initial; -moz-background-inline-policy: -moz-initial;">
+                <div>
+                    <p style="margin-top:0px;">作者：<a target="_blank" href="https://maodanp.github.io">Danping Mao</a>
+                    <br />本文出处：<a target="_blank" href="https://maodanp.github.io/2019/07/05/std-sort-cpp/">https://maodanp.github.io/2019/07/05/std-sort-cpp/</a>
+                    <br />
+                    文章版权归本人所有，欢迎转载，共同学习、共同进步。</p>
+                </div>
+            </div>
+
+            <aside>
+                
+                <ul class="list-inline post-tags">
+                    
+                    <li>
+                        <a href="/tags/c&#43;&#43;/">
+                            <i class="fa fa-tags"></i>
+                            c&#43;&#43;
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a href="/tags/stl/">
+                            <i class="fa fa-tags"></i>
+                            STL
+                        </a>
+                    </li>
+                    
+                </ul>
+
+                
+                
+                <h4 id="real-rels">相关文章</h4>
+                <ul class="post-rels" id="real-rels"><li id="li-rels"><a href="/2020/07/11/cpp_observer_subject/">观察者模式中Subject在C&#43;&#43;中的模板化</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年07月11日)</span></li><li id="li-rels"><a href="/2020/07/01/template_strategy/">Template 与 Strategy 模式比较</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年07月01日)</span></li><li id="li-rels"><a href="/2020/01/23/singleton_pattern/">C&#43;&#43; 关于单例模式的几种实现</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年01月23日)</span></li><li id="li-rels"><a href="/2020/01/18/factory_pattern/">Factory 工厂模式</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年01月18日)</span></li><li id="li-rels"><a href="/2020/01/10/stl-range-methods/">STL容器的区间成员函数</a>&nbsp;&nbsp;<span class="post-date" style="font-size:14px">&nbsp;(2020年01月10日)</span></li></ul>
+                
+            </aside>
+                
+            
+            <footer>
+                <nav>
+                    <ul class="pager">
+
+                        
+                        <li class="previous"><a href="/2020/01/10/stl-range-methods/"><span aria-hidden="true">&larr;</span> Prev</a></li>
+                        
+
+                        <li><a href="/post/">All Posts</a></li>
+
+                        
+                        <li class="next"><a href="/2019/06/18/linux-dynamic-link/">Next <span aria-hidden="true">&rarr;</span></a></li>
+                        
+
+                    </ul>
+                </nav>
+            </footer>
+
+        </article>
+    </div>
+    <div class="col-md-4">
+        <aside>
+    
+</aside>
+
+    </div>
+</div>
+
+</div>
+<hr>
+
+<footer class="container copy">
+    <p>&copy; 2022  Danping&#39;s blog </p>
+	<p>Powered by <a href="https://gohugo.io" target="_blank">Hugo</a></p>
+</footer>
+
+<script>
+var children = $("#TableOfContents").children().first().children().first().children().first().children().first().children().first();
+$("#TableOfContents").children().first().remove();
+$("#TableOfContents").append(children);
+
+var real = $("li#li-rels:lt(8)");
+$("ul.post-rels").children().remove();
+$("ul.post-rels").append(real);
+if ($("ul.post-rels").children().length == 0) {
+    $("#real-rels").remove();
+}
+</script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "//hm.baidu.com/hm.js?ace3ec99de96c4080ead1eb8d52db3b3";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92600390-2', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+
+<script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\[','\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    TeX: { equationNumbers: { autoNumber: "AMS" },
+         extensions: ["AMSmath.js", "AMSsymbols.js"] }
+  }
+});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    // Fix <code> tags after MathJax finishes running. This is a
+    // hack to overcome a shortcoming of Markdown. Discussion at
+    // https://github.com/mojombo/jekyll/issues/199
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i = 0; i &lt; all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+});
+</script>
+</html>
+
